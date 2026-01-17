@@ -1,0 +1,255 @@
+import 'dart:ffi';
+import 'package:ffi/ffi.dart';
+
+import 'bindings.dart'; // FFI bindings from Section 1
+
+/// Logs a message to the native iOS console.
+void nativeLog(String message) {
+  final cStr = message.toNativeUtf8();
+  widgetLog(cStr);
+  calloc.free(cStr);
+}
+
+// MARK: - Base Widget Class (Manages the native pointer)
+
+/// Represents a FlexWidget handle created on the native side.
+abstract class NativeWidget {
+  /// The opaque pointer to the native Swift/UIView object.
+  final WidgetRef handle;
+
+  // Finalizer to automatically release the native widget when the Dart object is GC'd
+  static final _finalizer = Finalizer<WidgetRef>((ptr) {
+    widgetRelease(ptr);
+  });
+
+  NativeWidget(this.handle) {
+    _finalizer.attach(this, handle, detach: this);
+  }
+
+  /// Retrieves the handle to the underlying UIKit UIView.
+  Pointer<Void> getUIViewHandle() {
+    return getUIViewFromWidget(handle);
+  }
+
+  // --- Builder / Modifiers ---
+
+  /// Sets the padding (inner spacing)
+  T padding<T extends NativeWidget>(double value) {
+    widgetSetPadding(handle, value);
+    return this as T;
+  }
+
+  /// Sets the margin (outer spacing)
+  T margin<T extends NativeWidget>(double value) {
+    widgetSetMargin(handle, value);
+    return this as T;
+  }
+
+  /// Sets the frame size. Pass 0 or null for auto/flex.
+  T frame<T extends NativeWidget>({double? width, double? height}) {
+    widgetSetSize(handle, width ?? 0, height ?? 0);
+    return this as T;
+  }
+
+  /// Sets the background color.
+  // T background<T extends NativeWidget>(Color color) {
+  //   widgetSetBackgroundColor(
+  //     handle,
+  //     color.red / 255.0,
+  //     color.green / 255.0,
+  //     color.blue / 255.0,
+  //     color.opacity,
+  //   );
+  //   return this as T;
+  // }
+
+  /// Sets the corner radius.
+  T cornerRadius<T extends NativeWidget>(double value) {
+    widgetSetCornerRadius(handle, value);
+    return this as T;
+  }
+
+  /// Sets flex grow property (equivalent to Expanded).
+  /// [flex] defaults to 1.0.
+  T expanded<T extends NativeWidget>({double flex = 1.0}) {
+    widgetSetFlexGrow(handle, flex);
+    return this as T;
+  }
+}
+
+// MARK: - Leaf Widgets
+
+class TextWidget extends NativeWidget {
+  TextWidget(String text) : super(_create(text));
+
+  static WidgetRef _create(String text) {
+    final cStr = text.toNativeUtf8();
+    final ptr = createText(cStr);
+    calloc.free(cStr);
+    return ptr;
+  }
+}
+
+class ButtonWidget extends NativeWidget {
+  // Keep a reference to the NativeCallable to prevent it from being GC'd
+  NativeCallable<Void Function()>? _callback;
+
+  ButtonWidget(String text, {Function? onPressed}) : super(_create(text)) {
+    if (onPressed != null) {
+      // _callback = NativeCallable<Void Function()>.listener(onPressed);
+      // widgetSetOnClick(handle, _callback!.nativeFunction);
+    }
+  }
+
+  static WidgetRef _create(String text) {
+    final cStr = text.toNativeUtf8();
+    final ptr = createButton(cStr);
+    calloc.free(cStr);
+    return ptr;
+  }
+
+  // Override internal dispose if needed, but NativeCallable.listener usually
+  // needs to be explicitly closed if we want to clean up early.
+  // However, since it's attached to the object, when the object dies,
+  // we might want a finalizer for it too, or just let it live attached.
+  // Actually, NativeCallable.listener memory is managed by Dart VM mostly,
+  // but we should close it when the widget is destroyed.
+  // For simplicity here, we rely on the fact that if the Dart object dies,
+  // we don't need the callback anymore.
+  // Ideal production: Add a close() method called by Finalizer.
+}
+
+class ImageWidget extends NativeWidget {
+  ImageWidget(String systemName) : super(_create(systemName));
+
+  static WidgetRef _create(String name) {
+    final cStr = name.toNativeUtf8();
+    final ptr = createImage(cStr);
+    calloc.free(cStr);
+    return ptr;
+  }
+}
+
+class SwitchWidget extends NativeWidget {
+  SwitchWidget() : super(createSwitch());
+}
+
+// MARK: - Container Widgets
+
+class ContainerWidget extends NativeWidget {
+  // Hold a strong reference to child to prevent GC
+  final NativeWidget? _child;
+
+  // Now simpler: acts mainly as a wrapper.
+  ContainerWidget({NativeWidget? child, bool isCard = false})
+    : _child = child,
+      super(isCard ? createCard() : createContainer()) {
+    if (child != null) {
+      containerSetChild(handle, child.handle);
+    }
+  }
+
+  // Protected constructor for subclasses
+  ContainerWidget._fromHandle(Pointer<Void> handle, {NativeWidget? child})
+    : _child = child,
+      super(handle) {
+    if (child != null) {
+      containerSetChild(handle, child.handle);
+    }
+  }
+
+  // Factory for Card
+  factory ContainerWidget.card({required NativeWidget child}) {
+    return ContainerWidget(isCard: true, child: child).padding(16);
+    // .background(Colors.white);
+  }
+}
+
+class SafeAreaWidget extends ContainerWidget {
+  SafeAreaWidget({required NativeWidget child})
+    : super._fromHandle(createSafeArea(), child: child);
+}
+
+// MARK: - Linear Widgets (Column/Row)
+
+class ColumnWidget extends NativeWidget {
+  // Hold strong references to children
+  final List<NativeWidget> _children;
+
+  ColumnWidget({List<NativeWidget> children = const []})
+    : _children = children,
+      super(createColumn()) {
+    _addChildren(children);
+  }
+
+  void _addChildren(List<NativeWidget> children) {
+    if (children.isEmpty) return;
+
+    final pointerList = calloc<WidgetRef>(children.length);
+    try {
+      for (var i = 0; i < children.length; i++) {
+        pointerList[i] = children[i].handle;
+      }
+      linearAddChildren(handle, pointerList, children.length);
+    } finally {
+      calloc.free(pointerList);
+    }
+  }
+}
+
+class RowWidget extends NativeWidget {
+  // Hold strong references to children
+  final List<NativeWidget> _children;
+
+  RowWidget({List<NativeWidget> children = const []})
+    : _children = children,
+      super(createRow()) {
+    _addChildren(children);
+  }
+
+  void _addChildren(List<NativeWidget> children) {
+    if (children.isEmpty) return;
+
+    final pointerList = calloc<WidgetRef>(children.length);
+    try {
+      for (var i = 0; i < children.length; i++) {
+        pointerList[i] = children[i].handle;
+      }
+      linearAddChildren(handle, pointerList, children.length);
+    } finally {
+      calloc.free(pointerList);
+    }
+  }
+}
+
+// MARK: - List View Widget
+
+class ListViewWidget extends NativeWidget {
+  final NativeCallable<ListViewBuilderCallbackC>? _builderEndpoint;
+
+  ListViewWidget.builder({
+    required int itemCount,
+    required NativeWidget Function(int index) itemBuilder,
+  }) : _builderEndpoint = NativeCallable<ListViewBuilderCallbackC>.listener((
+         WidgetRef list,
+         int index,
+       ) {
+         // Async callback from Swift (pushed via NativeCallable listener)
+         // We are back on the Dart isolate thread here.
+
+         // 1. Build the widget
+         final widget = itemBuilder(index);
+
+         // 2. Push it back to Swift
+         listViewUpdateItem(list, index, widget.handle);
+       }),
+       super(createListView()) {
+    listViewSetBuilder(handle, itemCount, _builderEndpoint!.nativeFunction);
+  }
+
+  // Need to clean up the builder when widgets are disposed?
+  // NativeWidget doesn't have a reliable dispose callback exposed here yet,
+  // but we are relying on Finalizer for C side.
+  // For the map, we technically leak the callback closure if we don't clear it.
+  // Ideally, we attach a finalizer to this object to remove the entry.
+}

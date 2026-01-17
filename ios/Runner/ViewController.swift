@@ -16,18 +16,18 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         self.view.backgroundColor = .white
         // Do any additional setup after loading the view.
-        let button = UIButton(type: UIButton.ButtonType.custom)
+//        let button = UIButton(type: UIButton.ButtonType.custom)
 //        button.addTarget(
 //            self,
 //            action: #selector(showFlutter),
 //            for: .touchUpInside
 //        )
-        button.setTitle("Show Flutter!", for: UIControl.State.normal)
-        button.frame = CGRect(x: 80.0, y: 210.0, width: 160.0, height: 40.0)
-        button.backgroundColor = UIColor.blue
-        button.center.x = self.view.center.x
-
-        self.view.addSubview(button)
+//        button.setTitle("Show Flutter!", for: UIControl.State.normal)
+//        button.frame = CGRect(x: 80.0, y: 210.0, width: 160.0, height: 40.0)
+//        button.backgroundColor = UIColor.green
+//        button.center.x = self.view.center.x
+//
+//        self.view.addSubview(button)
         ViewController.uiViewController = self
 
     }
