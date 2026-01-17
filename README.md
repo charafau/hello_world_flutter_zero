@@ -14,7 +14,7 @@ This project builds on that concept and shows the simplest possible Flutter Zero
 
 > Output of the Hello World app running on Flutter Zero.
 
-![Hello World Screenshot](screens/screenshot.png)
+![Hello World Screenshot](https://github.com/charafau/hello_world_flutter_zero/blob/main/screens/hello_world_flutter_zero.png?raw=true)
 
 
 ---
