@@ -289,6 +289,59 @@ public class ProgressWidget: FlexWidget {
     }
 }
 
+// MARK: - Slider Widget
+
+public class SliderWidget: FlexWidget {
+    private var onChanged: ((Float) -> Void)?
+    
+    @MainActor public init(min: Float = 0, max: Float = 1, value: Float = 0.5) {
+        let slider = UISlider()
+        slider.minimumValue = min
+        slider.maximumValue = max
+        slider.value = value
+        super.init(view: slider)
+        
+        slider.addTarget(self, action: #selector(sliderChanged), for: .valueChanged)
+    }
+    
+    @objc func sliderChanged(_ sender: UISlider) {
+        onChanged?(sender.value)
+    }
+    
+    public func setOnChanged(_ callback: @escaping (Float) -> Void) {
+        self.onChanged = callback
+    }
+}
+
+// MARK: - Chip Widget
+
+public class ChipWidget: FlexWidget {
+    @MainActor public init(text: String) {
+        let label = UILabel()
+        label.text = text
+        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.textColor = .white
+        label.backgroundColor = .systemBlue
+        label.textAlignment = .center
+        
+        // Calculate size needed for text
+        label.sizeToFit()
+        
+        // Add padding: 20px horizontal, 14px vertical (total 40px height)
+        let width = label.frame.width + 40
+        let height: CGFloat = 40
+        
+        // Set frame
+        label.frame = CGRect(x: 0, y: 0, width: width, height: height)
+        
+        // Apply corner radius after setting frame
+        label.layer.cornerRadius = height / 2
+        label.layer.masksToBounds = true
+        
+        super.init(view: label)
+    }
+}
+
 // MARK: - SegmentedControl Widget
 
 public class SegmentedControlWidget: FlexWidget {
@@ -351,6 +404,21 @@ public func create_image_from_url(_ url: UnsafePointer<CChar>) -> UnsafeMutableR
 @_cdecl("create_switch")
 public func create_switch() -> UnsafeMutableRawPointer {
     return Unmanaged.passRetained(SwitchWidget()).toOpaque()
+}
+
+@_cdecl("create_slider")
+public func create_slider(_ min: Float, _ max: Float, _ value: Float) -> UnsafeMutableRawPointer {
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(SliderWidget(min: min, max: max, value: value)).toOpaque()
+    }
+}
+
+@_cdecl("create_chip")
+public func create_chip(_ text: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let str = String(cString: text)
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(ChipWidget(text: str)).toOpaque()
+    }
 }
 
 @_cdecl("create_text_field")

@@ -36,6 +36,14 @@ void buildSampleLayout() {
           ],
         ),
         SwitchWidget(),
+        SliderWidget(min: 0, max: 100, value: 50),
+        RowWidget(
+          children: [
+            ChipWidget("Dart", width: 80, height: 40),
+            ChipWidget("Flutter", width: 90, height: 40),
+            ChipWidget("iOS", width: 60, height: 40),
+          ],
+        ),
         SegmentedControlWidget(["Option 1", "Option 2", "Option 3"]),
         TextFieldWidget("Enter your name"),
         TextEditorWidget("Enter description..."),

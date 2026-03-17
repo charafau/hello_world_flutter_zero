@@ -18,6 +18,8 @@ typedef CreateActivityIndicatorC = WidgetRef Function(Pointer<Utf8> style);
 typedef CreateProgressViewC = WidgetRef Function();
 typedef ProgressSetProgressC = Void Function(WidgetRef widget, Float value);
 typedef CreateSegmentedControlC = WidgetRef Function(Pointer<Utf8> segments);
+typedef CreateSliderC = WidgetRef Function(Float min, Float max, Float value);
+typedef CreateChipC = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateVoidC = WidgetRef Function();
 typedef WidgetReleaseC = Void Function(WidgetRef widget);
 typedef WidgetSetPaddingC = Void Function(WidgetRef widget, Float value);
@@ -62,6 +64,9 @@ typedef CreateActivityIndicatorDart = WidgetRef Function(Pointer<Utf8> style);
 typedef CreateProgressViewDart = WidgetRef Function();
 typedef ProgressSetProgressDart = void Function(WidgetRef widget, double value);
 typedef CreateSegmentedControlDart = WidgetRef Function(Pointer<Utf8> segments);
+typedef CreateSliderDart =
+    WidgetRef Function(double min, double max, double value);
+typedef CreateChipDart = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateVoidDart = WidgetRef Function();
 typedef WidgetReleaseDart = void Function(WidgetRef widget);
 typedef WidgetSetPaddingDart = void Function(WidgetRef widget, double value);
@@ -149,6 +154,12 @@ final createSegmentedControl = nativeLib
     .lookupFunction<CreateSegmentedControlC, CreateSegmentedControlDart>(
       'create_segmented_control',
     );
+final createSlider = nativeLib.lookupFunction<CreateSliderC, CreateSliderDart>(
+  'create_slider',
+);
+final createChip = nativeLib.lookupFunction<CreateChipC, CreateChipDart>(
+  'create_chip',
+);
 
 final widgetSetPadding = nativeLib
     .lookupFunction<WidgetSetPaddingC, WidgetSetPaddingDart>(

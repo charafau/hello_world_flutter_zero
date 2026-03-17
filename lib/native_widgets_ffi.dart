@@ -194,6 +194,30 @@ class SegmentedControlWidget extends NativeWidget {
   }
 }
 
+class SliderWidget extends NativeWidget {
+  SliderWidget({double min = 0, double max = 1, double value = 0.5})
+    : super(_create(min, max, value));
+
+  static WidgetRef _create(double min, double max, double value) {
+    return createSlider(min, max, value);
+  }
+}
+
+class ChipWidget extends NativeWidget {
+  ChipWidget(String text, {double? width, double? height})
+    : super(_create(text, width, height));
+
+  static WidgetRef _create(String text, double? width, double? height) {
+    final cStr = text.toNativeUtf8();
+    final ptr = createChip(cStr);
+    calloc.free(cStr);
+    if (width != null || height != null) {
+      widgetSetSize(ptr, width ?? 0, height ?? 0);
+    }
+    return ptr;
+  }
+}
+
 class ScrollViewWidget extends ContainerWidget {
   ScrollViewWidget({required NativeWidget child})
     : super._fromHandle(createScrollView(), child: child);
