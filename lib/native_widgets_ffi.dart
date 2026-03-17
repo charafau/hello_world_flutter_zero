@@ -134,6 +134,58 @@ class SwitchWidget extends NativeWidget {
   SwitchWidget() : super(createSwitch());
 }
 
+class TextFieldWidget extends NativeWidget {
+  TextFieldWidget(String placeholder) : super(_create(placeholder));
+
+  static WidgetRef _create(String placeholder) {
+    final cStr = placeholder.toNativeUtf8();
+    final ptr = createTextField(cStr);
+    calloc.free(cStr);
+    return ptr;
+  }
+}
+
+class TextEditorWidget extends NativeWidget {
+  TextEditorWidget(String text) : super(_create(text));
+
+  static WidgetRef _create(String text) {
+    final cStr = text.toNativeUtf8();
+    final ptr = createTextEditor(cStr);
+    calloc.free(cStr);
+    return ptr;
+  }
+}
+
+class ActivityIndicatorWidget extends NativeWidget {
+  ActivityIndicatorWidget({String style = 'medium'}) : super(_create(style));
+
+  static WidgetRef _create(String style) {
+    final cStr = style.toNativeUtf8();
+    final ptr = createActivityIndicator(cStr);
+    calloc.free(cStr);
+    return ptr;
+  }
+}
+
+class ProgressWidget extends NativeWidget {
+  ProgressWidget() : super(createProgressView());
+
+  void setProgress(double value) {
+    progressSetProgress(handle, value);
+  }
+}
+
+class SegmentedControlWidget extends NativeWidget {
+  SegmentedControlWidget(List<String> segments) : super(_create(segments));
+
+  static WidgetRef _create(List<String> segments) {
+    final cStr = segments.join('|').toNativeUtf8();
+    final ptr = createSegmentedControl(cStr);
+    calloc.free(cStr);
+    return ptr;
+  }
+}
+
 // MARK: - Container Widgets
 
 class ContainerWidget extends NativeWidget {

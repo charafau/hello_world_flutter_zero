@@ -204,6 +204,97 @@ public class SwitchWidget: FlexWidget {
     }
 }
 
+// MARK: - TextField Widget
+
+public class TextFieldWidget: FlexWidget, UITextFieldDelegate {
+    private var onChanged: ((String) -> Void)?
+    
+    @MainActor public init(placeholder: String) {
+        let textField = UITextField()
+        textField.placeholder = placeholder
+        textField.borderStyle = .roundedRect
+        super.init(view: textField)
+        textField.delegate = self
+        self.view.flex.height(44).paddingHorizontal(10)
+    }
+    
+    func setOnChanged(_ callback: @escaping (String) -> Void) {
+        self.onChanged = callback
+    }
+    
+    public func textFieldDidChangeSelection(_ textField: UITextField) {
+        onChanged?(textField.text ?? "")
+    }
+}
+
+// MARK: - TextEditor Widget
+
+public class TextEditorWidget: FlexWidget {
+    @MainActor public init(text: String) {
+        let textView = UITextView()
+        textView.text = text
+        textView.font = UIFont.systemFont(ofSize: 16)
+        textView.layer.borderColor = UIColor.systemGray4.cgColor
+        textView.layer.borderWidth = 1
+        textView.layer.cornerRadius = 8
+        super.init(view: textView)
+        self.view.flex.height(100).padding(8)
+    }
+}
+
+// MARK: - ActivityIndicator Widget
+
+public class ActivityIndicatorWidget: FlexWidget {
+    @MainActor public init(style: String) {
+        let indicator = UIActivityIndicatorView(style: style == "large" ? .large : .medium)
+        indicator.startAnimating()
+        super.init(view: indicator)
+    }
+    
+    public func stopAnimating() {
+        (view as? UIActivityIndicatorView)?.stopAnimating()
+    }
+}
+
+// MARK: - ProgressView Widget
+
+public class ProgressWidget: FlexWidget {
+    @MainActor public init() {
+        let progress = UIProgressView(progressViewStyle: .default)
+        progress.progress = 0.5
+        super.init(view: progress)
+        self.view.flex.height(4)
+    }
+    
+    public func setProgress(_ value: Float) {
+        (view as? UIProgressView)?.setProgress(value, animated: true)
+    }
+}
+
+// MARK: - SegmentedControl Widget
+
+public class SegmentedControlWidget: FlexWidget {
+    private var segments: [String]
+    private var onChanged: ((Int) -> Void)?
+    
+    @MainActor public init(segments: [String]) {
+        let control = UISegmentedControl(items: segments)
+        control.selectedSegmentIndex = 0
+        self.segments = segments
+        super.init(view: control)
+        
+        control.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
+    }
+    
+    @objc func segmentChanged(_ sender: UISegmentedControl) {
+        onChanged?(sender.selectedSegmentIndex)
+    }
+    
+    func setOnChanged(_ callback: @escaping (Int) -> Void) {
+        self.onChanged = callback
+    }
+}
+
 // MARK: - 4. C-Bindings
 // We expose these classes via opaque pointers (void*)
 
@@ -234,6 +325,54 @@ public func create_image(_ name: UnsafePointer<CChar>) -> UnsafeMutableRawPointe
 @_cdecl("create_switch")
 public func create_switch() -> UnsafeMutableRawPointer {
     return Unmanaged.passRetained(SwitchWidget()).toOpaque()
+}
+
+@_cdecl("create_text_field")
+public func create_text_field(_ placeholder: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let str = String(cString: placeholder)
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(TextFieldWidget(placeholder: str)).toOpaque()
+    }
+}
+
+@_cdecl("create_text_editor")
+public func create_text_editor(_ text: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let str = String(cString: text)
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(TextEditorWidget(text: str)).toOpaque()
+    }
+}
+
+@_cdecl("create_activity_indicator")
+public func create_activity_indicator(_ style: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let str = String(cString: style)
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(ActivityIndicatorWidget(style: str)).toOpaque()
+    }
+}
+
+@_cdecl("create_progress_view")
+public func create_progress_view() -> UnsafeMutableRawPointer {
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(ProgressWidget()).toOpaque()
+    }
+}
+
+@_cdecl("create_segmented_control")
+public func create_segmented_control(_ segmentsJson: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let jsonStr = String(cString: segmentsJson)
+    let segments = jsonStr.components(separatedBy: "|")
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(SegmentedControlWidget(segments: segments)).toOpaque()
+    }
+}
+
+@_cdecl("progress_set_progress")
+public func progress_set_progress(_ ptr: UnsafeMutableRawPointer, _ value: Float) {
+    let widget = Unmanaged<FlexWidget>.fromOpaque(ptr).takeUnretainedValue()
+    if let progress = widget as? ProgressWidget {
+        progress.setProgress(value)
+    }
 }
 
 @_cdecl("create_container")

@@ -11,6 +11,12 @@ typedef WidgetRef = Pointer<Void>; // Common Widget Handle
 typedef CreateTextC = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateButtonC = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateImageC = WidgetRef Function(Pointer<Utf8> name);
+typedef CreateTextFieldC = WidgetRef Function(Pointer<Utf8> placeholder);
+typedef CreateTextEditorC = WidgetRef Function(Pointer<Utf8> text);
+typedef CreateActivityIndicatorC = WidgetRef Function(Pointer<Utf8> style);
+typedef CreateProgressViewC = WidgetRef Function();
+typedef ProgressSetProgressC = Void Function(WidgetRef widget, Float value);
+typedef CreateSegmentedControlC = WidgetRef Function(Pointer<Utf8> segments);
 typedef CreateVoidC = WidgetRef Function();
 typedef WidgetReleaseC = Void Function(WidgetRef widget);
 typedef WidgetSetPaddingC = Void Function(WidgetRef widget, Float value);
@@ -47,6 +53,12 @@ typedef GetUIViewFromWidgetC = Pointer<Void> Function(WidgetRef root);
 typedef CreateTextDart = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateButtonDart = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateImageDart = WidgetRef Function(Pointer<Utf8> name);
+typedef CreateTextFieldDart = WidgetRef Function(Pointer<Utf8> placeholder);
+typedef CreateTextEditorDart = WidgetRef Function(Pointer<Utf8> text);
+typedef CreateActivityIndicatorDart = WidgetRef Function(Pointer<Utf8> style);
+typedef CreateProgressViewDart = WidgetRef Function();
+typedef ProgressSetProgressDart = void Function(WidgetRef widget, double value);
+typedef CreateSegmentedControlDart = WidgetRef Function(Pointer<Utf8> segments);
 typedef CreateVoidDart = WidgetRef Function();
 typedef WidgetReleaseDart = void Function(WidgetRef widget);
 typedef WidgetSetPaddingDart = void Function(WidgetRef widget, double value);
@@ -106,6 +118,29 @@ final createColumn = nativeLib.lookupFunction<CreateVoidC, CreateVoidDart>(
 final createRow = nativeLib.lookupFunction<CreateVoidC, CreateVoidDart>(
   'create_row',
 );
+
+final createTextField = nativeLib
+    .lookupFunction<CreateTextFieldC, CreateTextFieldDart>('create_text_field');
+final createTextEditor = nativeLib
+    .lookupFunction<CreateTextEditorC, CreateTextEditorDart>(
+      'create_text_editor',
+    );
+final createActivityIndicator = nativeLib
+    .lookupFunction<CreateActivityIndicatorC, CreateActivityIndicatorDart>(
+      'create_activity_indicator',
+    );
+final createProgressView = nativeLib
+    .lookupFunction<CreateProgressViewC, CreateProgressViewDart>(
+      'create_progress_view',
+    );
+final progressSetProgress = nativeLib
+    .lookupFunction<ProgressSetProgressC, ProgressSetProgressDart>(
+      'progress_set_progress',
+    );
+final createSegmentedControl = nativeLib
+    .lookupFunction<CreateSegmentedControlC, CreateSegmentedControlDart>(
+      'create_segmented_control',
+    );
 
 final widgetSetPadding = nativeLib
     .lookupFunction<WidgetSetPaddingC, WidgetSetPaddingDart>(
