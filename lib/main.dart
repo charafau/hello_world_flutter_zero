@@ -23,42 +23,44 @@ final AddNumbersDart addNumbers = nativeLib
 void buildSampleLayout() {
   NativeWidget? _nativeRoot;
 
-  final column = ColumnWidget(
-    children: [
-      RowWidget(
-        children: [
-          ImageWidget.asset("person.crop.circle.fill"),
-          ImageWidget.network(
-            "https://flutter.dev/assets/shadow-dash.d59d0e8266b087a7a7f8a61c50ad4f6e.png",
-          ),
-          TextWidget(" John Doe"),
-        ],
-      ),
-      SwitchWidget(),
-      SegmentedControlWidget(["Option 1", "Option 2", "Option 3"]),
-      TextFieldWidget("Enter your name"),
-      TextEditorWidget("Enter description..."),
-      ProgressWidget()..setProgress(0.6),
-      ActivityIndicatorWidget(style: "large"),
-      ButtonWidget(
-        "Execute Action",
-        onPressed: () {
-          print("Dart: Button pressed!");
-          nativeLog(
-            "Button pressed callback received in Dart and sent back to Native!",
-          );
-        },
-      ),
-      TextWidget("Hello World 1"),
-      TextWidget("Hello World 2"),
-      TextWidget("Hello World 3"),
-      TextWidget("Hello World 4"),
-      TextWidget("Hello World 5"),
-      TextWidget("Hello World 6"),
-    ],
-  ).expanded();
+  final scrollView = ScrollViewWidget(
+    child: ColumnWidget(
+      children: [
+        RowWidget(
+          children: [
+            ImageWidget.asset("person.crop.circle.fill"),
+            ImageWidget.network(
+              "https://flutter.dev/assets/shadow-dash.d59d0e8266b087a7a7f8a61c50ad4f6e.png",
+            ),
+            TextWidget(" John Doe"),
+          ],
+        ),
+        SwitchWidget(),
+        SegmentedControlWidget(["Option 1", "Option 2", "Option 3"]),
+        TextFieldWidget("Enter your name"),
+        TextEditorWidget("Enter description..."),
+        ProgressWidget()..setProgress(0.6),
+        ActivityIndicatorWidget(style: "large"),
+        ButtonWidget(
+          "Execute Action",
+          onPressed: () {
+            print("Dart: Button pressed!");
+            nativeLog(
+              "Button pressed callback received in Dart and sent back to Native!",
+            );
+          },
+        ),
+        TextWidget("Hello World 1"),
+        TextWidget("Hello World 2"),
+        TextWidget("Hello World 3"),
+        TextWidget("Hello World 4"),
+        TextWidget("Hello World 5"),
+        TextWidget("Hello World 6"),
+      ],
+    ),
+  );
 
-  final child = ContainerWidget(child: column).padding(10);
+  final child = ContainerWidget(child: scrollView).padding(10);
 
   _nativeRoot = SafeAreaWidget(child: child);
 

@@ -194,6 +194,11 @@ class SegmentedControlWidget extends NativeWidget {
   }
 }
 
+class ScrollViewWidget extends ContainerWidget {
+  ScrollViewWidget({required NativeWidget child})
+    : super._fromHandle(createScrollView(), child: child);
+}
+
 // MARK: - Container Widgets
 
 class ContainerWidget extends NativeWidget {

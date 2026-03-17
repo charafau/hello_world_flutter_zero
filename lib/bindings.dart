@@ -34,6 +34,7 @@ typedef WidgetSetOnClickC =
     );
 typedef WidgetLogC = Void Function(Pointer<Utf8> message);
 typedef CreateListViewC = WidgetRef Function();
+typedef CreateScrollViewC = WidgetRef Function();
 typedef ListViewBuilderCallbackC = Void Function(WidgetRef list, Int64 index);
 typedef ListViewUpdateItemC =
     Void Function(WidgetRef list, Int64 index, WidgetRef item);
@@ -78,6 +79,7 @@ typedef WidgetSetOnClickDart =
     );
 typedef WidgetLogDart = void Function(Pointer<Utf8> message);
 typedef CreateListViewDart = WidgetRef Function();
+typedef CreateScrollViewDart = WidgetRef Function();
 typedef ListViewUpdateItemDart =
     void Function(WidgetRef list, int index, WidgetRef item);
 typedef ListViewSetBuilderDart =
@@ -177,6 +179,10 @@ final widgetLog = nativeLib.lookupFunction<WidgetLogC, WidgetLogDart>(
 );
 final createListView = nativeLib
     .lookupFunction<CreateListViewC, CreateListViewDart>('create_list_view');
+final createScrollView = nativeLib
+    .lookupFunction<CreateScrollViewC, CreateScrollViewDart>(
+      'create_scroll_view',
+    );
 final listViewSetBuilder = nativeLib
     .lookupFunction<ListViewSetBuilderC, ListViewSetBuilderDart>(
       'list_view_set_builder',

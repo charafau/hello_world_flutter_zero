@@ -529,31 +529,52 @@ public func linear_add_children(
 class FlexScrollView: UIScrollView {
     weak var contentContainer: UIView?
     
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+    
+    private func setup() {
+        alwaysBounceVertical = true
+        showsVerticalScrollIndicator = true
+    }
+    
     override func layoutSubviews() {
         super.layoutSubviews()
         
         guard let contentContainer = contentContainer else { return }
         
-        // Position contentContainer to fill width, at top
-        contentContainer.frame = CGRect(x: 0, y: 0, width: bounds.width, height: contentContainer.frame.height)
+        // Only proceed if we have a valid width
+        guard bounds.width > 0 else { return }
         
-        // Layout the contentContainer
-        contentContainer.flex.layout(mode: .adjustHeight)
+        // Set width first, then layout to calculate height
+        contentContainer.flex.width(bounds.width).layout(mode: .adjustHeight)
+        
+        // Get the calculated height from frame
+        let calculatedHeight = contentContainer.frame.height
+        
+        // Set the frame with calculated height
+        contentContainer.frame = CGRect(x: 0, y: 0, width: bounds.width, height: calculatedHeight)
         
         // Sets contentSize
-        self.contentSize = contentContainer.frame.size
+        self.contentSize = CGSize(width: bounds.width, height: max(calculatedHeight, bounds.height))
         
         print("DEBUG: FlexScrollView layout. Frame: \(self.frame), ContentFrame: \(contentContainer.frame), ContentSize: \(self.contentSize)")
     }
 }
 
 public class ScrollWidget: FlexWidget {
+    let scrollView: FlexScrollView = FlexScrollView()
     public let contentContainer = UIView()
     
     @MainActor init() {
-        let scrollView = FlexScrollView()
         scrollView.contentContainer = contentContainer
-        scrollView.backgroundColor = .clear // maybe .red for debugging?
+        scrollView.backgroundColor = .systemBackground
         
         super.init(view: scrollView)
         
@@ -563,7 +584,13 @@ public class ScrollWidget: FlexWidget {
         scrollView.addSubview(contentContainer)
     }
     
+    @MainActor public override func layout() {
+        // Ensure scrollView fills its container via FlexLayout
+        scrollView.flex.layout(mode: .fitContainer)
+    }
+    
     @MainActor public func setChild(_ childView: UIView) {
+        // Add the child to contentContainer
         contentContainer.flex.addItem(childView)
     }
     
