@@ -27,7 +27,10 @@ void buildSampleLayout() {
     children: [
       RowWidget(
         children: [
-          ImageWidget("person.crop.circle.fill"),
+          ImageWidget.asset("person.crop.circle.fill"),
+          ImageWidget.network(
+            "https://flutter.dev/assets/shadow-dash.d59d0e8266b087a7a7f8a61c50ad4f6e.png",
+          ),
           TextWidget(" John Doe"),
         ],
       ),

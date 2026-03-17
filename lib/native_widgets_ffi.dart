@@ -120,11 +120,19 @@ class ButtonWidget extends NativeWidget {
 }
 
 class ImageWidget extends NativeWidget {
-  ImageWidget(String systemName) : super(_create(systemName));
+  ImageWidget.asset(String name) : super(_createAsset(name));
+  ImageWidget.network(String url) : super(_createNetwork(url));
 
-  static WidgetRef _create(String name) {
+  static WidgetRef _createAsset(String name) {
     final cStr = name.toNativeUtf8();
     final ptr = createImage(cStr);
+    calloc.free(cStr);
+    return ptr;
+  }
+
+  static WidgetRef _createNetwork(String url) {
+    final cStr = url.toNativeUtf8();
+    final ptr = createImageFromUrl(cStr);
     calloc.free(cStr);
     return ptr;
   }

@@ -193,7 +193,25 @@ public class ImageWidget: FlexWidget {
         let imgView = UIImageView(image: UIImage(systemName: systemName))
         imgView.contentMode = .scaleAspectFit
         super.init(view: imgView)
-        self.view.flex.size(50) // Default size
+        self.view.flex.size(50)
+    }
+    
+    @MainActor public init(url: String) {
+        let imgView = UIImageView()
+        imgView.contentMode = .scaleAspectFit
+        super.init(view: imgView)
+        self.view.flex.size(200)
+        
+        guard let imageUrl = URL(string: url) else { return }
+        
+        let viewRef = self.view
+        URLSession.shared.dataTask(with: imageUrl) { data, _, error in
+            guard let data = data, error == nil, let image = UIImage(data: data) else { return }
+            DispatchQueue.main.async {
+                imgView.image = image
+                viewRef.flex.layout()
+            }
+        }.resume()
     }
 }
 
@@ -319,6 +337,14 @@ public func create_image(_ name: UnsafePointer<CChar>) -> UnsafeMutableRawPointe
     MainActor.assumeIsolated {
         let str = String(cString: name)
         return Unmanaged.passRetained(ImageWidget(systemName: str)).toOpaque()
+    }
+}
+
+@_cdecl("create_image_from_url")
+public func create_image_from_url(_ url: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let str = String(cString: url)
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(ImageWidget(url: str)).toOpaque()
     }
 }
 

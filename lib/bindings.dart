@@ -11,6 +11,7 @@ typedef WidgetRef = Pointer<Void>; // Common Widget Handle
 typedef CreateTextC = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateButtonC = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateImageC = WidgetRef Function(Pointer<Utf8> name);
+typedef CreateImageFromUrlC = WidgetRef Function(Pointer<Utf8> url);
 typedef CreateTextFieldC = WidgetRef Function(Pointer<Utf8> placeholder);
 typedef CreateTextEditorC = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateActivityIndicatorC = WidgetRef Function(Pointer<Utf8> style);
@@ -53,6 +54,7 @@ typedef GetUIViewFromWidgetC = Pointer<Void> Function(WidgetRef root);
 typedef CreateTextDart = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateButtonDart = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateImageDart = WidgetRef Function(Pointer<Utf8> name);
+typedef CreateImageFromUrlDart = WidgetRef Function(Pointer<Utf8> url);
 typedef CreateTextFieldDart = WidgetRef Function(Pointer<Utf8> placeholder);
 typedef CreateTextEditorDart = WidgetRef Function(Pointer<Utf8> text);
 typedef CreateActivityIndicatorDart = WidgetRef Function(Pointer<Utf8> style);
@@ -103,6 +105,10 @@ final createButton = nativeLib.lookupFunction<CreateButtonC, CreateButtonDart>(
 final createImage = nativeLib.lookupFunction<CreateImageC, CreateImageDart>(
   'create_image',
 );
+final createImageFromUrl = nativeLib
+    .lookupFunction<CreateImageFromUrlC, CreateImageFromUrlDart>(
+      'create_image_from_url',
+    );
 final createSwitch = nativeLib.lookupFunction<CreateVoidC, CreateVoidDart>(
   'create_switch',
 );
