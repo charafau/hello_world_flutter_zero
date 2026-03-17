@@ -96,8 +96,10 @@ class ButtonWidget extends NativeWidget {
 
   ButtonWidget(String text, {Function? onPressed}) : super(_create(text)) {
     if (onPressed != null) {
-      // _callback = NativeCallable<Void Function()>.listener(onPressed);
-      // widgetSetOnClick(handle, _callback!.nativeFunction);
+      _callback = NativeCallable<Void Function()>.listener(() {
+        onPressed();
+      });
+      widgetSetOnClick(handle, _callback!.nativeFunction);
     }
   }
 
@@ -221,6 +223,35 @@ class ChipWidget extends NativeWidget {
 class ScrollViewWidget extends ContainerWidget {
   ScrollViewWidget({required NativeWidget child})
     : super._fromHandle(createScrollView(), child: child);
+}
+
+class NavigationWidget extends NativeWidget {
+  final List<NativeWidget> _pages = [];
+
+  NavigationWidget(String title) : super(_create(title));
+
+  static WidgetRef _create(String title) {
+    final cStr = title.toNativeUtf8();
+    final ptr = createNavigation(cStr);
+    calloc.free(cStr);
+    return ptr;
+  }
+
+  void setRoot(NativeWidget page) {
+    navigationSetRoot(handle, page.handle);
+  }
+
+  void push(NativeWidget page) {
+    _pages.add(page);
+    navigationPush(handle, page.handle);
+  }
+
+  void pop() {
+    if (_pages.isNotEmpty) {
+      _pages.removeLast();
+    }
+    navigationPop(handle);
+  }
 }
 
 // MARK: - Container Widgets

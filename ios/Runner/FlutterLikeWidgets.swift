@@ -479,6 +479,64 @@ public func create_card() -> UnsafeMutableRawPointer {
     return Unmanaged.passRetained(CardWidget()).toOpaque()
 }
 
+// MARK: - NavigationController Widget
+
+public class NavigationWidget: FlexWidget {
+    let navigationController: UINavigationController
+    var rootViewController: UIViewController?
+    
+    @MainActor public init(title: String) {
+        let vc = UIViewController()
+        vc.view.backgroundColor = .systemBackground
+        vc.title = title
+        
+        rootViewController = vc
+        navigationController = UINavigationController(rootViewController: vc)
+        
+        super.init(view: navigationController.view)
+    }
+    
+    @MainActor public func setRoot(_ widget: FlexWidget) {
+        guard let rootVC = rootViewController else { return }
+        
+        // Clear existing subviews and add new one
+        rootVC.view.subviews.forEach { $0.removeFromSuperview() }
+        rootVC.view.addSubview(widget.view)
+        
+        widget.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            widget.view.leadingAnchor.constraint(equalTo: rootVC.view.leadingAnchor),
+            widget.view.trailingAnchor.constraint(equalTo: rootVC.view.trailingAnchor),
+            widget.view.topAnchor.constraint(equalTo: rootVC.view.topAnchor),
+            widget.view.bottomAnchor.constraint(equalTo: rootVC.view.bottomAnchor)
+        ])
+    }
+    
+    @MainActor public func push(_ widget: FlexWidget) {
+        let vc = UIViewController()
+        vc.view.backgroundColor = .systemBackground
+        vc.view.addSubview(widget.view)
+        
+        widget.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            widget.view.leadingAnchor.constraint(equalTo: vc.view.leadingAnchor),
+            widget.view.trailingAnchor.constraint(equalTo: vc.view.trailingAnchor),
+            widget.view.topAnchor.constraint(equalTo: vc.view.topAnchor),
+            widget.view.bottomAnchor.constraint(equalTo: vc.view.bottomAnchor)
+        ])
+        
+        navigationController.pushViewController(vc, animated: true)
+    }
+    
+    @MainActor public func pop() {
+        navigationController.popViewController(animated: true)
+    }
+    
+    @MainActor public func setTitle(_ title: String) {
+        navigationController.topViewController?.title = title
+    }
+}
+
 @_cdecl("create_column")
 public func create_column() -> UnsafeMutableRawPointer {
     return Unmanaged.passRetained(LinearWidget(direction: .column)).toOpaque()
@@ -670,6 +728,50 @@ public func create_scroll_view() -> UnsafeMutableRawPointer {
     MainActor.assumeIsolated {
         let widget = ScrollWidget()
         return Unmanaged.passRetained(widget).toOpaque()
+    }
+}
+
+@_cdecl("create_navigation")
+public func create_navigation(_ title: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let titleStr = String(cString: title)
+    return MainActor.assumeIsolated {
+        let widget = NavigationWidget(title: titleStr)
+        return Unmanaged.passRetained(widget).toOpaque()
+    }
+}
+
+@_cdecl("navigation_push")
+public func navigation_push(_ navPtr: UnsafeMutableRawPointer, _ widgetPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.push(widget)
+        }
+    }
+}
+
+@_cdecl("navigation_pop")
+public func navigation_pop(_ navPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.pop()
+        }
+    }
+}
+
+@_cdecl("navigation_set_root")
+public func navigation_set_root(_ navPtr: UnsafeMutableRawPointer, _ widgetPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.setRoot(widget)
+        }
     }
 }
 

@@ -21,9 +21,25 @@ final AddNumbersDart addNumbers = nativeLib
     .lookupFunction<AddNumbersC, AddNumbersDart>('add_numbers');
 
 void buildSampleLayout() {
-  NativeWidget? _nativeRoot;
+  final nav = NavigationWidget("Home");
 
-  final scrollView = ScrollViewWidget(
+  final detailPage = ScrollViewWidget(
+    child: ColumnWidget(
+      children: [
+        TextWidget("Detail Page"),
+        TextWidget("This is a new page!"),
+        ButtonWidget(
+          "Go Back",
+          onPressed: () {
+            print("Dart: Button pressed, popping!");
+            nav.pop();
+          },
+        ),
+      ],
+    ),
+  );
+
+  final homePage = ScrollViewWidget(
     child: ColumnWidget(
       children: [
         RowWidget(
@@ -50,12 +66,10 @@ void buildSampleLayout() {
         ProgressWidget()..setProgress(0.6),
         ActivityIndicatorWidget(style: "large"),
         ButtonWidget(
-          "Execute Action",
+          "Go to Details",
           onPressed: () {
-            print("Dart: Button pressed!");
-            nativeLog(
-              "Button pressed callback received in Dart and sent back to Native!",
-            );
+            print("Dart: Button pressed, pushing new page!");
+            nav.push(detailPage);
           },
         ),
         TextWidget("Hello World 1"),
@@ -68,11 +82,11 @@ void buildSampleLayout() {
     ),
   );
 
-  final child = ContainerWidget(child: scrollView).padding(10);
+  final child = ContainerWidget(child: homePage).padding(10);
 
-  _nativeRoot = SafeAreaWidget(child: child);
+  nav.setRoot(child);
 
-  final uiViewHandle = _nativeRoot.getUIViewHandle();
+  final uiViewHandle = nav.getUIViewHandle();
   final address = uiViewHandle.address;
   print("Native UIView handle (address) ready: ${uiViewHandle.address}");
   print("Calling Swift FFI function with address: $address");

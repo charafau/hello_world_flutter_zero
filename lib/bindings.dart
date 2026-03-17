@@ -37,6 +37,10 @@ typedef WidgetSetOnClickC =
 typedef WidgetLogC = Void Function(Pointer<Utf8> message);
 typedef CreateListViewC = WidgetRef Function();
 typedef CreateScrollViewC = WidgetRef Function();
+typedef CreateNavigationC = WidgetRef Function(Pointer<Utf8> title);
+typedef NavigationPushC = Void Function(WidgetRef nav, WidgetRef widget);
+typedef NavigationPopC = Void Function(WidgetRef nav);
+typedef NavigationSetRootC = Void Function(WidgetRef nav, WidgetRef widget);
 typedef ListViewBuilderCallbackC = Void Function(WidgetRef list, Int64 index);
 typedef ListViewUpdateItemC =
     Void Function(WidgetRef list, Int64 index, WidgetRef item);
@@ -85,6 +89,10 @@ typedef WidgetSetOnClickDart =
 typedef WidgetLogDart = void Function(Pointer<Utf8> message);
 typedef CreateListViewDart = WidgetRef Function();
 typedef CreateScrollViewDart = WidgetRef Function();
+typedef CreateNavigationDart = WidgetRef Function(Pointer<Utf8> title);
+typedef NavigationPushDart = void Function(WidgetRef nav, WidgetRef widget);
+typedef NavigationPopDart = void Function(WidgetRef nav);
+typedef NavigationSetRootDart = void Function(WidgetRef nav, WidgetRef widget);
 typedef ListViewUpdateItemDart =
     void Function(WidgetRef list, int index, WidgetRef item);
 typedef ListViewSetBuilderDart =
@@ -193,6 +201,18 @@ final createListView = nativeLib
 final createScrollView = nativeLib
     .lookupFunction<CreateScrollViewC, CreateScrollViewDart>(
       'create_scroll_view',
+    );
+final createNavigation = nativeLib
+    .lookupFunction<CreateNavigationC, CreateNavigationDart>(
+      'create_navigation',
+    );
+final navigationPush = nativeLib
+    .lookupFunction<NavigationPushC, NavigationPushDart>('navigation_push');
+final navigationPop = nativeLib
+    .lookupFunction<NavigationPopC, NavigationPopDart>('navigation_pop');
+final navigationSetRoot = nativeLib
+    .lookupFunction<NavigationSetRootC, NavigationSetRootDart>(
+      'navigation_set_root',
     );
 final listViewSetBuilder = nativeLib
     .lookupFunction<ListViewSetBuilderC, ListViewSetBuilderDart>(
