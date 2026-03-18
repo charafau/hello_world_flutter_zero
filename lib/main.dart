@@ -19,6 +19,24 @@ final AddNumbersDart addNumbers = nativeLib
 void buildSampleLayout() {
   final tabBar = TabBarWidget();
 
+  final homeNav = NavigationWidget("Home");
+
+  final homeDetailPage = ScrollViewWidget(
+    child: ColumnWidget(
+      children: [
+        TextWidget("Home Detail"),
+        TextWidget("This is a detail page within Home tab!"),
+        ButtonWidget(
+          "Go Back",
+          onPressed: () {
+            print("Dart: Popping from Home detail!");
+            homeNav.pop();
+          },
+        ),
+      ],
+    ),
+  );
+
   final homeContent = ScrollViewWidget(
     child: ColumnWidget(
       children: [
@@ -46,6 +64,32 @@ void buildSampleLayout() {
         ProgressWidget()..setProgress(0.6),
         ActivityIndicatorWidget(style: "large"),
         TextWidget("Home Tab Content"),
+        ButtonWidget(
+          "View Details",
+          onPressed: () {
+            print("Dart: Pushing Home detail!");
+            homeNav.push(homeDetailPage);
+          },
+        ),
+      ],
+    ),
+  );
+
+  final settingsNav = NavigationWidget("Settings");
+
+  final settingsDetailPage = ScrollViewWidget(
+    child: ColumnWidget(
+      children: [
+        TextWidget("Account Settings"),
+        SwitchWidget(),
+        TextWidget("Enable notifications"),
+        ButtonWidget(
+          "Go Back",
+          onPressed: () {
+            print("Dart: Popping from Settings detail!");
+            settingsNav.pop();
+          },
+        ),
       ],
     ),
   );
@@ -57,9 +101,35 @@ void buildSampleLayout() {
         TextFieldWidget("Search settings..."),
         SwitchWidget(),
         ButtonWidget(
+          "Account Settings",
+          onPressed: () {
+            print("Dart: Pushing Settings detail!");
+            settingsNav.push(settingsDetailPage);
+          },
+        ),
+        ButtonWidget(
           "Logout",
           onPressed: () {
             print("Logout pressed");
+          },
+        ),
+      ],
+    ),
+  );
+
+  final profileNav = NavigationWidget("Profile");
+
+  final profileDetailPage = ScrollViewWidget(
+    child: ColumnWidget(
+      children: [
+        TextWidget("Edit Profile"),
+        TextFieldWidget("Name"),
+        TextFieldWidget("Email"),
+        ButtonWidget(
+          "Save",
+          onPressed: () {
+            print("Dart: Popping from Profile detail!");
+            profileNav.pop();
           },
         ),
       ],
@@ -75,20 +145,21 @@ void buildSampleLayout() {
         ButtonWidget(
           "Edit Profile",
           onPressed: () {
-            print("Edit profile pressed");
+            print("Dart: Pushing Profile detail!");
+            profileNav.push(profileDetailPage);
           },
         ),
       ],
     ),
   );
 
-  final homePage = ContainerWidget(child: homeContent).padding(10);
-  final settingsPage = ContainerWidget(child: settingsContent).padding(10);
-  final profilePage = ContainerWidget(child: profileContent).padding(10);
+  homeNav.setRoot(homeContent);
+  settingsNav.setRoot(settingsContent);
+  profileNav.setRoot(profileContent);
 
-  tabBar.addTab("Home", "house", homePage);
-  tabBar.addTab("Settings", "gearshape", settingsPage);
-  tabBar.addTab("Profile", "person", profilePage);
+  tabBar.addTab("Home", "house", homeNav);
+  tabBar.addTab("Settings", "gearshape", settingsNav);
+  tabBar.addTab("Profile", "person", profileNav);
 
   final uiViewHandle = tabBar.getUIViewHandle();
   final address = uiViewHandle.address;
