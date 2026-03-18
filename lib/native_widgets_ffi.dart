@@ -368,6 +368,21 @@ class TabBarWidget extends NativeWidget {
   void hideTabBar(bool hidden) {
     tabBarHide(handle, hidden);
   }
+
+  NativeCallable<Void Function()>? _tabCallback;
+
+  void setOnTabSelected(Function? onTabSelected) {
+    if (onTabSelected != null) {
+      _tabCallback = NativeCallable<Void Function()>.listener(() {
+        onTabSelected();
+      });
+      tabBarSetOnTabSelected(handle, _tabCallback!.nativeFunction);
+    }
+  }
+
+  int getSelectedIndex() {
+    return tabBarGetSelectedIndex(handle);
+  }
 }
 
 class ModalWidget extends NativeWidget {

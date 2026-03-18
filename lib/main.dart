@@ -244,6 +244,18 @@ void buildSampleLayout() {
   tabBar.setBadge(0, "3");
   tabBar.setBadge(2, "!");
 
+  tabBar.setOnTabSelected(() {
+    final index = tabBar.getSelectedIndex();
+    print("Tab switched to index: $index");
+    if (index == 0) {
+      print("Home tab selected");
+    } else if (index == 1) {
+      print("Settings tab selected");
+    } else if (index == 2) {
+      print("Profile tab selected");
+    }
+  });
+
   final uiViewHandle = tabBar.getUIViewHandle();
   final address = uiViewHandle.address;
   print("Native UIView handle (address) ready: ${uiViewHandle.address}");

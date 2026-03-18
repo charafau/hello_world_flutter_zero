@@ -1028,13 +1028,15 @@ public func modal_dismiss(_ modalPtr: UnsafeMutableRawPointer) {
 
 // MARK: - TabBarController Widget
 
-public class TabBarWidget: FlexWidget {
+public class TabBarWidget: FlexWidget, UITabBarControllerDelegate {
     let tabBarController: UITabBarController
     var tabs: [(String, String, UIViewController)] = [] // (title, iconName, vc)
+    var onTabSelected: ((Int) -> Void)?
     
     @MainActor public init() {
         tabBarController = UITabBarController()
         super.init(view: tabBarController.view)
+        tabBarController.delegate = self
     }
     
     @MainActor public func addTab(title: String, iconName: String, widget: FlexWidget) {
@@ -1061,6 +1063,17 @@ public class TabBarWidget: FlexWidget {
         tabBarController.selectedIndex = index
     }
     
+    @MainActor public func setOnTabSelected(_ callback: @escaping (Int) -> Void) {
+        onTabSelected = callback
+    }
+    
+    public func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+        if let callback = onTabSelected {
+            let index = tabBarController.selectedIndex
+            callback(index)
+        }
+    }
+    
     @MainActor public func setBackgroundColor(r: Float, g: Float, b: Float, a: Float = 1.0) {
         let color = UIColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: CGFloat(a))
         tabBarController.tabBar.backgroundColor = color
@@ -1083,6 +1096,10 @@ public class TabBarWidget: FlexWidget {
     
     @MainActor public func hideTabBar(_ hidden: Bool) {
         tabBarController.tabBar.isHidden = hidden
+    }
+    
+    @MainActor public func getSelectedIndex() -> Int {
+        return tabBarController.selectedIndex
     }
 }
 
@@ -1185,6 +1202,34 @@ public func tab_bar_hide(_ tabBarPtr: UnsafeMutableRawPointer, _ hidden: Bool) {
         if let tabBarWidget = tabBar as? TabBarWidget {
             tabBarWidget.hideTabBar(hidden)
         }
+    }
+}
+
+@_cdecl("tab_bar_set_on_tab_selected")
+public func tab_bar_set_on_tab_selected(
+    _ tabBarPtr: UnsafeMutableRawPointer,
+    _ callback: @convention(c) @escaping () -> Void
+) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setOnTabSelected { index in
+                callback()
+            }
+        }
+    }
+}
+
+@_cdecl("tab_bar_get_selected_index")
+public func tab_bar_get_selected_index(_ tabBarPtr: UnsafeMutableRawPointer) -> Int {
+    return MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            return tabBarWidget.getSelectedIndex()
+        }
+        return 0
     }
 }
 

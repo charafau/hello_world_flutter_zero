@@ -382,6 +382,18 @@ typedef TabBarSetBadgeDart =
     void Function(WidgetRef tabBar, int index, Pointer<Utf8> badge);
 typedef TabBarHideC = Void Function(WidgetRef tabBar, Bool hidden);
 typedef TabBarHideDart = void Function(WidgetRef tabBar, bool hidden);
+typedef TabBarSetOnTabSelectedC =
+    Void Function(
+      WidgetRef tabBar,
+      Pointer<NativeFunction<Void Function()>> callback,
+    );
+typedef TabBarSetOnTabSelectedDart =
+    void Function(
+      WidgetRef tabBar,
+      Pointer<NativeFunction<Void Function()>> callback,
+    );
+typedef TabBarGetSelectedIndexC = Int32 Function(WidgetRef tabBar);
+typedef TabBarGetSelectedIndexDart = int Function(WidgetRef tabBar);
 
 final createTabBar = nativeLib.lookupFunction<CreateTabBarC, CreateTabBarDart>(
   'create_tab_bar',
@@ -411,6 +423,14 @@ final tabBarSetBadge = nativeLib
 final tabBarHide = nativeLib.lookupFunction<TabBarHideC, TabBarHideDart>(
   'tab_bar_hide',
 );
+final tabBarSetOnTabSelected = nativeLib
+    .lookupFunction<TabBarSetOnTabSelectedC, TabBarSetOnTabSelectedDart>(
+      'tab_bar_set_on_tab_selected',
+    );
+final tabBarGetSelectedIndex = nativeLib
+    .lookupFunction<TabBarGetSelectedIndexC, TabBarGetSelectedIndexDart>(
+      'tab_bar_get_selected_index',
+    );
 
 // MARK: - Modal Bindings
 typedef CreateModalC = WidgetRef Function(Pointer<Utf8> title);
