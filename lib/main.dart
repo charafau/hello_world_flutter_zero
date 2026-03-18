@@ -21,6 +21,24 @@ void buildSampleLayout() {
 
   final homeNav = NavigationWidget("Home");
 
+  homeNav.setBackgroundColor(0.0, 0.5, 1.0);
+
+  homeNav.addLeftBarButton(
+    "Menu",
+    icon: "line.3.horizontal",
+    onPressed: () {
+      print("Menu pressed!");
+    },
+  );
+
+  homeNav.addRightBarButton(
+    "Search",
+    icon: "magnifyingglass",
+    onPressed: () {
+      print("Search pressed!");
+    },
+  );
+
   final homeDetailPage = ScrollViewWidget(
     child: ColumnWidget(
       children: [
@@ -68,6 +86,7 @@ void buildSampleLayout() {
           "View Details",
           onPressed: () {
             print("Dart: Pushing Home detail!");
+            homeNav.setTitle("Details", r: 1.0, g: 0.0, b: 0.0);
             homeNav.push(homeDetailPage);
           },
         ),
@@ -76,6 +95,14 @@ void buildSampleLayout() {
   );
 
   final settingsNav = NavigationWidget("Settings");
+
+  settingsNav.addRightBarButton(
+    "Add",
+    icon: "plus",
+    onPressed: () {
+      print("Add settings pressed!");
+    },
+  );
 
   final settingsDetailPage = ScrollViewWidget(
     child: ColumnWidget(
@@ -104,6 +131,7 @@ void buildSampleLayout() {
           "Account Settings",
           onPressed: () {
             print("Dart: Pushing Settings detail!");
+            settingsNav.setTitle("Account", r: 0.0, g: 0.7, b: 0.0);
             settingsNav.push(settingsDetailPage);
           },
         ),
@@ -146,6 +174,7 @@ void buildSampleLayout() {
           "Edit Profile",
           onPressed: () {
             print("Dart: Pushing Profile detail!");
+            profileNav.setTitle("Edit", r: 0.6, g: 0.3, b: 0.6);
             profileNav.push(profileDetailPage);
           },
         ),

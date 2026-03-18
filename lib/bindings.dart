@@ -41,6 +41,30 @@ typedef CreateNavigationC = WidgetRef Function(Pointer<Utf8> title);
 typedef NavigationPushC = Void Function(WidgetRef nav, WidgetRef widget);
 typedef NavigationPopC = Void Function(WidgetRef nav);
 typedef NavigationSetRootC = Void Function(WidgetRef nav, WidgetRef widget);
+typedef NavigationSetTitleC =
+    Void Function(
+      WidgetRef nav,
+      Pointer<Utf8> title,
+      Float r,
+      Float g,
+      Float b,
+    );
+typedef NavigationAddLeftBarButtonC =
+    Void Function(
+      WidgetRef nav,
+      Pointer<Utf8> title,
+      Pointer<Utf8> icon,
+      Pointer<NativeFunction<Void Function()>> callback,
+    );
+typedef NavigationAddRightBarButtonC =
+    Void Function(
+      WidgetRef nav,
+      Pointer<Utf8> title,
+      Pointer<Utf8> icon,
+      Pointer<NativeFunction<Void Function()>> callback,
+    );
+typedef NavigationSetBackgroundColorC =
+    Void Function(WidgetRef nav, Float r, Float g, Float b);
 typedef ListViewBuilderCallbackC = Void Function(WidgetRef list, Int64 index);
 typedef ListViewUpdateItemC =
     Void Function(WidgetRef list, Int64 index, WidgetRef item);
@@ -93,6 +117,30 @@ typedef CreateNavigationDart = WidgetRef Function(Pointer<Utf8> title);
 typedef NavigationPushDart = void Function(WidgetRef nav, WidgetRef widget);
 typedef NavigationPopDart = void Function(WidgetRef nav);
 typedef NavigationSetRootDart = void Function(WidgetRef nav, WidgetRef widget);
+typedef NavigationSetTitleDart =
+    void Function(
+      WidgetRef nav,
+      Pointer<Utf8> title,
+      double r,
+      double g,
+      double b,
+    );
+typedef NavigationAddLeftBarButtonDart =
+    void Function(
+      WidgetRef nav,
+      Pointer<Utf8> title,
+      Pointer<Utf8> icon,
+      Pointer<NativeFunction<Void Function()>> callback,
+    );
+typedef NavigationAddRightBarButtonDart =
+    void Function(
+      WidgetRef nav,
+      Pointer<Utf8> title,
+      Pointer<Utf8> icon,
+      Pointer<NativeFunction<Void Function()>> callback,
+    );
+typedef NavigationSetBackgroundColorDart =
+    void Function(WidgetRef nav, double r, double g, double b);
 typedef ListViewUpdateItemDart =
     void Function(WidgetRef list, int index, WidgetRef item);
 typedef ListViewSetBuilderDart =
@@ -214,6 +262,25 @@ final navigationSetRoot = nativeLib
     .lookupFunction<NavigationSetRootC, NavigationSetRootDart>(
       'navigation_set_root',
     );
+final navigationSetTitle = nativeLib
+    .lookupFunction<NavigationSetTitleC, NavigationSetTitleDart>(
+      'navigation_set_title',
+    );
+final navigationAddLeftBarButton = nativeLib
+    .lookupFunction<
+      NavigationAddLeftBarButtonC,
+      NavigationAddLeftBarButtonDart
+    >('navigation_add_left_bar_button');
+final navigationAddRightBarButton = nativeLib
+    .lookupFunction<
+      NavigationAddRightBarButtonC,
+      NavigationAddRightBarButtonDart
+    >('navigation_add_right_bar_button');
+final navigationSetBackgroundColor = nativeLib
+    .lookupFunction<
+      NavigationSetBackgroundColorC,
+      NavigationSetBackgroundColorDart
+    >('navigation_set_background_color');
 final listViewSetBuilder = nativeLib
     .lookupFunction<ListViewSetBuilderC, ListViewSetBuilderDart>(
       'list_view_set_builder',

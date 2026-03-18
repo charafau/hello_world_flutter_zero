@@ -227,6 +227,8 @@ class ScrollViewWidget extends ContainerWidget {
 
 class NavigationWidget extends NativeWidget {
   final List<NativeWidget> _pages = [];
+  NativeCallable<Void Function()>? _leftCallback;
+  NativeCallable<Void Function()>? _rightCallback;
 
   NavigationWidget(String title) : super(_create(title));
 
@@ -251,6 +253,52 @@ class NavigationWidget extends NativeWidget {
       _pages.removeLast();
     }
     navigationPop(handle);
+  }
+
+  void setTitle(String title, {double? r, double? g, double? b}) {
+    final cStr = title.toNativeUtf8();
+    navigationSetTitle(handle, cStr, r ?? 0, g ?? 0, b ?? 0);
+    calloc.free(cStr);
+  }
+
+  void addLeftBarButton(String title, {String? icon, Function? onPressed}) {
+    final titleStr = title.toNativeUtf8();
+    final iconStr = (icon ?? '').toNativeUtf8();
+    if (onPressed != null) {
+      _leftCallback = NativeCallable<Void Function()>.listener(() {
+        onPressed();
+      });
+      navigationAddLeftBarButton(
+        handle,
+        titleStr,
+        iconStr,
+        _leftCallback!.nativeFunction,
+      );
+    }
+    calloc.free(titleStr);
+    calloc.free(iconStr);
+  }
+
+  void addRightBarButton(String title, {String? icon, Function? onPressed}) {
+    final titleStr = title.toNativeUtf8();
+    final iconStr = (icon ?? '').toNativeUtf8();
+    if (onPressed != null) {
+      _rightCallback = NativeCallable<Void Function()>.listener(() {
+        onPressed();
+      });
+      navigationAddRightBarButton(
+        handle,
+        titleStr,
+        iconStr,
+        _rightCallback!.nativeFunction,
+      );
+    }
+    calloc.free(titleStr);
+    calloc.free(iconStr);
+  }
+
+  void setBackgroundColor(double r, double g, double b) {
+    navigationSetBackgroundColor(handle, r, g, b);
   }
 }
 

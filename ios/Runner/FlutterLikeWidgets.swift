@@ -484,6 +484,8 @@ public func create_card() -> UnsafeMutableRawPointer {
 public class NavigationWidget: FlexWidget {
     let navigationController: UINavigationController
     var rootViewController: UIViewController?
+    var leftBarButtonCallback: (() -> Void)?
+    var rightBarButtonCallback: (() -> Void)?
     
     @MainActor public init(title: String) {
         let vc = UIViewController()
@@ -499,7 +501,6 @@ public class NavigationWidget: FlexWidget {
     @MainActor public func setRoot(_ widget: FlexWidget) {
         guard let rootVC = rootViewController else { return }
         
-        // Clear existing subviews and add new one
         rootVC.view.subviews.forEach { $0.removeFromSuperview() }
         rootVC.view.addSubview(widget.view)
         
@@ -534,6 +535,55 @@ public class NavigationWidget: FlexWidget {
     
     @MainActor public func setTitle(_ title: String) {
         navigationController.topViewController?.title = title
+    }
+    
+    @MainActor public func setNavigationBarTitle(_ title: String, colorR: Float = 0, colorG: Float = 0, colorB: Float = 0) {
+        guard let vc = navigationController.topViewController else { return }
+        vc.title = title
+        
+        if colorR > 0 || colorG > 0 || colorB > 0 {
+            let color = UIColor(red: CGFloat(colorR), green: CGFloat(colorG), blue: CGFloat(colorB), alpha: 1.0)
+            vc.navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: color]
+        }
+    }
+    
+    @MainActor public func addLeftBarButton(title: String, iconName: String?, callback: @escaping () -> Void) {
+        leftBarButtonCallback = callback
+        
+        var barButtonItem: UIBarButtonItem
+        if let icon = iconName {
+            barButtonItem = UIBarButtonItem(image: UIImage(systemName: icon), style: .plain, target: self, action: #selector(leftBarButtonTapped))
+        } else {
+            barButtonItem = UIBarButtonItem(title: title, style: .plain, target: self, action: #selector(leftBarButtonTapped))
+        }
+        
+        navigationController.topViewController?.navigationItem.leftBarButtonItem = barButtonItem
+    }
+    
+    @objc func leftBarButtonTapped() {
+        leftBarButtonCallback?()
+    }
+    
+    @MainActor public func addRightBarButton(title: String, iconName: String?, callback: @escaping () -> Void) {
+        rightBarButtonCallback = callback
+        
+        var barButtonItem: UIBarButtonItem
+        if let icon = iconName {
+            barButtonItem = UIBarButtonItem(image: UIImage(systemName: icon), style: .plain, target: self, action: #selector(rightBarButtonTapped))
+        } else {
+            barButtonItem = UIBarButtonItem(title: title, style: .plain, target: self, action: #selector(rightBarButtonTapped))
+        }
+        
+        navigationController.topViewController?.navigationItem.rightBarButtonItem = barButtonItem
+    }
+    
+    @objc func rightBarButtonTapped() {
+        rightBarButtonCallback?()
+    }
+    
+    @MainActor public func setNavigationBarBackgroundColor(r: Float, g: Float, b: Float) {
+        let color = UIColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: 1.0)
+        navigationController.navigationBar.barTintColor = color
     }
 }
 
@@ -771,6 +821,65 @@ public func navigation_set_root(_ navPtr: UnsafeMutableRawPointer, _ widgetPtr: 
         
         if let navWidget = nav as? NavigationWidget {
             navWidget.setRoot(widget)
+        }
+    }
+}
+
+@_cdecl("navigation_set_title")
+public func navigation_set_title(_ navPtr: UnsafeMutableRawPointer, _ titlePtr: UnsafePointer<CChar>, _ colorR: Float, _ colorG: Float, _ colorB: Float) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let title = String(cString: titlePtr)
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.setNavigationBarTitle(title, colorR: colorR, colorG: colorG, colorB: colorB)
+        }
+    }
+}
+
+@_cdecl("navigation_add_left_bar_button")
+public func navigation_add_left_bar_button(
+    _ navPtr: UnsafeMutableRawPointer,
+    _ titlePtr: UnsafePointer<CChar>,
+    _ iconPtr: UnsafePointer<CChar>,
+    _ callback: @convention(c) @escaping () -> Void
+) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let title = String(cString: titlePtr)
+        let icon = String(cString: iconPtr)
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.addLeftBarButton(title: title, iconName: icon.isEmpty ? nil : icon, callback: callback)
+        }
+    }
+}
+
+@_cdecl("navigation_add_right_bar_button")
+public func navigation_add_right_bar_button(
+    _ navPtr: UnsafeMutableRawPointer,
+    _ titlePtr: UnsafePointer<CChar>,
+    _ iconPtr: UnsafePointer<CChar>,
+    _ callback: @convention(c) @escaping () -> Void
+) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let title = String(cString: titlePtr)
+        let icon = String(cString: iconPtr)
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.addRightBarButton(title: title, iconName: icon.isEmpty ? nil : icon, callback: callback)
+        }
+    }
+}
+
+@_cdecl("navigation_set_background_color")
+public func navigation_set_background_color(_ navPtr: UnsafeMutableRawPointer, _ r: Float, _ g: Float, _ b: Float) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.setNavigationBarBackgroundColor(r: r, g: g, b: b)
         }
     }
 }
