@@ -248,6 +248,26 @@ class NavigationWidget extends NativeWidget {
     navigationPush(handle, page.handle);
   }
 
+  void pushWithTitle(
+    NativeWidget page, {
+    required String title,
+    double? r,
+    double? g,
+    double? b,
+  }) {
+    _pages.add(page);
+    final titleStr = title.toNativeUtf8();
+    navigationPushWithTitle(
+      handle,
+      page.handle,
+      titleStr,
+      r ?? 0,
+      g ?? 0,
+      b ?? 0,
+    );
+    calloc.free(titleStr);
+  }
+
   void pop() {
     if (_pages.isNotEmpty) {
       _pages.removeLast();

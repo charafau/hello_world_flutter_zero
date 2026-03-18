@@ -513,10 +513,19 @@ public class NavigationWidget: FlexWidget {
         ])
     }
     
-    @MainActor public func push(_ widget: FlexWidget) {
+    @MainActor public func push(_ widget: FlexWidget, title: String? = nil, colorR: Float = 0, colorG: Float = 0, colorB: Float = 0) {
         let vc = UIViewController()
         vc.view.backgroundColor = .systemBackground
         vc.view.addSubview(widget.view)
+        
+        if let title = title {
+            vc.title = title
+            
+            if colorR > 0 || colorG > 0 || colorB > 0 {
+                let color = UIColor(red: CGFloat(colorR), green: CGFloat(colorG), blue: CGFloat(colorB), alpha: 1.0)
+                vc.navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: color]
+            }
+        }
         
         widget.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -798,6 +807,26 @@ public func navigation_push(_ navPtr: UnsafeMutableRawPointer, _ widgetPtr: Unsa
         
         if let navWidget = nav as? NavigationWidget {
             navWidget.push(widget)
+        }
+    }
+}
+
+@_cdecl("navigation_push_with_title")
+public func navigation_push_with_title(
+    _ navPtr: UnsafeMutableRawPointer,
+    _ widgetPtr: UnsafeMutableRawPointer,
+    _ titlePtr: UnsafePointer<CChar>,
+    _ colorR: Float,
+    _ colorG: Float,
+    _ colorB: Float
+) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        let title = String(cString: titlePtr)
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.push(widget, title: title, colorR: colorR, colorG: colorG, colorB: colorB)
         }
     }
 }

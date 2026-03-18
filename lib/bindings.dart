@@ -39,6 +39,15 @@ typedef CreateListViewC = WidgetRef Function();
 typedef CreateScrollViewC = WidgetRef Function();
 typedef CreateNavigationC = WidgetRef Function(Pointer<Utf8> title);
 typedef NavigationPushC = Void Function(WidgetRef nav, WidgetRef widget);
+typedef NavigationPushWithTitleC =
+    Void Function(
+      WidgetRef nav,
+      WidgetRef widget,
+      Pointer<Utf8> title,
+      Float colorR,
+      Float colorG,
+      Float colorB,
+    );
 typedef NavigationPopC = Void Function(WidgetRef nav);
 typedef NavigationSetRootC = Void Function(WidgetRef nav, WidgetRef widget);
 typedef NavigationSetTitleC =
@@ -115,6 +124,15 @@ typedef CreateListViewDart = WidgetRef Function();
 typedef CreateScrollViewDart = WidgetRef Function();
 typedef CreateNavigationDart = WidgetRef Function(Pointer<Utf8> title);
 typedef NavigationPushDart = void Function(WidgetRef nav, WidgetRef widget);
+typedef NavigationPushWithTitleDart =
+    void Function(
+      WidgetRef nav,
+      WidgetRef widget,
+      Pointer<Utf8> title,
+      double colorR,
+      double colorG,
+      double colorB,
+    );
 typedef NavigationPopDart = void Function(WidgetRef nav);
 typedef NavigationSetRootDart = void Function(WidgetRef nav, WidgetRef widget);
 typedef NavigationSetTitleDart =
@@ -256,6 +274,10 @@ final createNavigation = nativeLib
     );
 final navigationPush = nativeLib
     .lookupFunction<NavigationPushC, NavigationPushDart>('navigation_push');
+final navigationPushWithTitle = nativeLib
+    .lookupFunction<NavigationPushWithTitleC, NavigationPushWithTitleDart>(
+      'navigation_push_with_title',
+    );
 final navigationPop = nativeLib
     .lookupFunction<NavigationPopC, NavigationPopDart>('navigation_pop');
 final navigationSetRoot = nativeLib

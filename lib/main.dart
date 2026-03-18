@@ -86,8 +86,13 @@ void buildSampleLayout() {
           "View Details",
           onPressed: () {
             print("Dart: Pushing Home detail!");
-            homeNav.setTitle("Details", r: 1.0, g: 0.0, b: 0.0);
-            homeNav.push(homeDetailPage);
+            homeNav.pushWithTitle(
+              homeDetailPage,
+              title: "Details",
+              r: 1.0,
+              g: 0.0,
+              b: 0.0,
+            );
           },
         ),
         ButtonWidget(
@@ -164,8 +169,13 @@ void buildSampleLayout() {
           "Account Settings",
           onPressed: () {
             print("Dart: Pushing Settings detail!");
-            settingsNav.setTitle("Account", r: 0.0, g: 0.7, b: 0.0);
-            settingsNav.push(settingsDetailPage);
+            settingsNav.pushWithTitle(
+              settingsDetailPage,
+              title: "Account",
+              r: 0.0,
+              g: 0.7,
+              b: 0.0,
+            );
           },
         ),
         ButtonWidget(
@@ -207,8 +217,13 @@ void buildSampleLayout() {
           "Edit Profile",
           onPressed: () {
             print("Dart: Pushing Profile detail!");
-            profileNav.setTitle("Edit", r: 0.6, g: 0.3, b: 0.6);
-            profileNav.push(profileDetailPage);
+            profileNav.pushWithTitle(
+              profileDetailPage,
+              title: "Edit",
+              r: 0.6,
+              g: 0.3,
+              b: 0.6,
+            );
           },
         ),
       ],
