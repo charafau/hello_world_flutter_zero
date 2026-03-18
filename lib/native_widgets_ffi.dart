@@ -340,6 +340,34 @@ class TabBarWidget extends NativeWidget {
   void setSelectedIndex(int index) {
     tabBarSetSelectedIndex(handle, index);
   }
+
+  void setBackgroundColor(double r, double g, double b, {double a = 1.0}) {
+    tabBarSetBackgroundColor(handle, r, g, b, a);
+  }
+
+  void setTintColor(double r, double g, double b) {
+    tabBarSetTintColor(handle, r, g, b);
+  }
+
+  void setUnselectedItemColor(double r, double g, double b) {
+    tabBarSetUnselectedItemColor(handle, r, g, b);
+  }
+
+  void setBadge(int index, String? badge) {
+    if (badge == null) {
+      final empty = ''.toNativeUtf8();
+      tabBarSetBadge(handle, index, empty);
+      calloc.free(empty);
+    } else {
+      final badgeStr = badge.toNativeUtf8();
+      tabBarSetBadge(handle, index, badgeStr);
+      calloc.free(badgeStr);
+    }
+  }
+
+  void hideTabBar(bool hidden) {
+    tabBarHide(handle, hidden);
+  }
 }
 
 class ModalWidget extends NativeWidget {

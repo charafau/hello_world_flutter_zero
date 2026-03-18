@@ -1060,6 +1060,30 @@ public class TabBarWidget: FlexWidget {
     @MainActor public func setSelectedIndex(_ index: Int) {
         tabBarController.selectedIndex = index
     }
+    
+    @MainActor public func setBackgroundColor(r: Float, g: Float, b: Float, a: Float = 1.0) {
+        let color = UIColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: CGFloat(a))
+        tabBarController.tabBar.backgroundColor = color
+    }
+    
+    @MainActor public func setTintColor(r: Float, g: Float, b: Float) {
+        let color = UIColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: 1.0)
+        tabBarController.tabBar.tintColor = color
+    }
+    
+    @MainActor public func setUnselectedItemColor(r: Float, g: Float, b: Float) {
+        let color = UIColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: 1.0)
+        tabBarController.tabBar.unselectedItemTintColor = color
+    }
+    
+    @MainActor public func setBadge(index: Int, badge: String?) {
+        guard index < tabs.count else { return }
+        tabs[index].2.tabBarItem.badgeValue = badge
+    }
+    
+    @MainActor public func hideTabBar(_ hidden: Bool) {
+        tabBarController.tabBar.isHidden = hidden
+    }
 }
 
 @_cdecl("create_tab_bar")
@@ -1097,6 +1121,69 @@ public func tab_bar_set_selected_index(_ tabBarPtr: UnsafeMutableRawPointer, _ i
         
         if let tabBarWidget = tabBar as? TabBarWidget {
             tabBarWidget.setSelectedIndex(index)
+        }
+    }
+}
+
+@_cdecl("tab_bar_set_background_color")
+public func tab_bar_set_background_color(_ tabBarPtr: UnsafeMutableRawPointer, _ r: Float, _ g: Float, _ b: Float, _ a: Float) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setBackgroundColor(r: r, g: g, b: b, a: a)
+        }
+    }
+}
+
+@_cdecl("tab_bar_set_tint_color")
+public func tab_bar_set_tint_color(_ tabBarPtr: UnsafeMutableRawPointer, _ r: Float, _ g: Float, _ b: Float) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setTintColor(r: r, g: g, b: b)
+        }
+    }
+}
+
+@_cdecl("tab_bar_set_unselected_item_color")
+public func tab_bar_set_unselected_item_color(_ tabBarPtr: UnsafeMutableRawPointer, _ r: Float, _ g: Float, _ b: Float) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setUnselectedItemColor(r: r, g: g, b: b)
+        }
+    }
+}
+
+@_cdecl("tab_bar_set_badge")
+public func tab_bar_set_badge(_ tabBarPtr: UnsafeMutableRawPointer, _ index: Int, _ badgePtr: UnsafePointer<CChar>?) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        var badgeValue: String? = nil
+        if let ptr = badgePtr {
+            let badgeStr = String(cString: ptr)
+            if !badgeStr.isEmpty {
+                badgeValue = badgeStr
+            }
+        }
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setBadge(index: index, badge: badgeValue)
+        }
+    }
+}
+
+@_cdecl("tab_bar_hide")
+public func tab_bar_hide(_ tabBarPtr: UnsafeMutableRawPointer, _ hidden: Bool) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.hideTabBar(hidden)
         }
     }
 }

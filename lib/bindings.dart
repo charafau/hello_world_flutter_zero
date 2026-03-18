@@ -364,6 +364,24 @@ typedef TabBarAddTabDart =
     );
 typedef TabBarSetSelectedIndexC = Void Function(WidgetRef tabBar, Int32 index);
 typedef TabBarSetSelectedIndexDart = void Function(WidgetRef tabBar, int index);
+typedef TabBarSetBackgroundColorC =
+    Void Function(WidgetRef tabBar, Float r, Float g, Float b, Float a);
+typedef TabBarSetBackgroundColorDart =
+    void Function(WidgetRef tabBar, double r, double g, double b, double a);
+typedef TabBarSetTintColorC =
+    Void Function(WidgetRef tabBar, Float r, Float g, Float b);
+typedef TabBarSetTintColorDart =
+    void Function(WidgetRef tabBar, double r, double g, double b);
+typedef TabBarSetUnselectedItemColorC =
+    Void Function(WidgetRef tabBar, Float r, Float g, Float b);
+typedef TabBarSetUnselectedItemColorDart =
+    void Function(WidgetRef tabBar, double r, double g, double b);
+typedef TabBarSetBadgeC =
+    Void Function(WidgetRef tabBar, Int32 index, Pointer<Utf8> badge);
+typedef TabBarSetBadgeDart =
+    void Function(WidgetRef tabBar, int index, Pointer<Utf8> badge);
+typedef TabBarHideC = Void Function(WidgetRef tabBar, Bool hidden);
+typedef TabBarHideDart = void Function(WidgetRef tabBar, bool hidden);
 
 final createTabBar = nativeLib.lookupFunction<CreateTabBarC, CreateTabBarDart>(
   'create_tab_bar',
@@ -375,6 +393,24 @@ final tabBarSetSelectedIndex = nativeLib
     .lookupFunction<TabBarSetSelectedIndexC, TabBarSetSelectedIndexDart>(
       'tab_bar_set_selected_index',
     );
+final tabBarSetBackgroundColor = nativeLib
+    .lookupFunction<TabBarSetBackgroundColorC, TabBarSetBackgroundColorDart>(
+      'tab_bar_set_background_color',
+    );
+final tabBarSetTintColor = nativeLib
+    .lookupFunction<TabBarSetTintColorC, TabBarSetTintColorDart>(
+      'tab_bar_set_tint_color',
+    );
+final tabBarSetUnselectedItemColor = nativeLib
+    .lookupFunction<
+      TabBarSetUnselectedItemColorC,
+      TabBarSetUnselectedItemColorDart
+    >('tab_bar_set_unselected_item_color');
+final tabBarSetBadge = nativeLib
+    .lookupFunction<TabBarSetBadgeC, TabBarSetBadgeDart>('tab_bar_set_badge');
+final tabBarHide = nativeLib.lookupFunction<TabBarHideC, TabBarHideDart>(
+  'tab_bar_hide',
+);
 
 // MARK: - Modal Bindings
 typedef CreateModalC = WidgetRef Function(Pointer<Utf8> title);

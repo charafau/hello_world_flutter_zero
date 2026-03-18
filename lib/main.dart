@@ -238,6 +238,12 @@ void buildSampleLayout() {
   tabBar.addTab("Settings", "gearshape", settingsNav);
   tabBar.addTab("Profile", "person", profileNav);
 
+  tabBar.setBackgroundColor(0.95, 0.95, 0.97);
+  tabBar.setTintColor(0.0, 0.5, 1.0);
+  tabBar.setUnselectedItemColor(0.5, 0.5, 0.5);
+  tabBar.setBadge(0, "3");
+  tabBar.setBadge(2, "!");
+
   final uiViewHandle = tabBar.getUIViewHandle();
   final address = uiViewHandle.address;
   print("Native UIView handle (address) ready: ${uiViewHandle.address}");
