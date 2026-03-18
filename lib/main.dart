@@ -90,6 +90,39 @@ void buildSampleLayout() {
             homeNav.push(homeDetailPage);
           },
         ),
+        ButtonWidget(
+          "Show Modal",
+          onPressed: () {
+            print("Dart: Showing modal!");
+            final modal = ModalWidget("Modal Title");
+            final modalContent = ScrollViewWidget(
+              child: ColumnWidget(
+                children: [
+                  TextWidget("This is a modal!"),
+                  TextWidget(
+                    "You can present forms, settings, or any content here.",
+                  ),
+                  ButtonWidget(
+                    "Close",
+                    onPressed: () {
+                      print("Dart: Dismissing modal!");
+                      modal.dismiss();
+                    },
+                  ),
+                ],
+              ),
+            );
+            modal.setContent(modalContent);
+            modal.addDismissButton(
+              "Done",
+              onPressed: () {
+                print("Dart: Done button pressed!");
+                modal.dismiss();
+              },
+            );
+            modal.present(homeNav);
+          },
+        ),
       ],
     ),
   );

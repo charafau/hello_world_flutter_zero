@@ -353,3 +353,41 @@ final tabBarSetSelectedIndex = nativeLib
     .lookupFunction<TabBarSetSelectedIndexC, TabBarSetSelectedIndexDart>(
       'tab_bar_set_selected_index',
     );
+
+// MARK: - Modal Bindings
+typedef CreateModalC = WidgetRef Function(Pointer<Utf8> title);
+typedef CreateModalDart = WidgetRef Function(Pointer<Utf8> title);
+typedef ModalSetContentC = Void Function(WidgetRef modal, WidgetRef widget);
+typedef ModalSetContentDart = void Function(WidgetRef modal, WidgetRef widget);
+typedef ModalAddDismissButtonC =
+    Void Function(
+      WidgetRef modal,
+      Pointer<Utf8> title,
+      Pointer<NativeFunction<Void Function()>> callback,
+    );
+typedef ModalAddDismissButtonDart =
+    void Function(
+      WidgetRef modal,
+      Pointer<Utf8> title,
+      Pointer<NativeFunction<Void Function()>> callback,
+    );
+typedef ModalPresentC = Void Function(WidgetRef modal, WidgetRef from);
+typedef ModalPresentDart = void Function(WidgetRef modal, WidgetRef from);
+typedef ModalDismissC = Void Function(WidgetRef modal);
+typedef ModalDismissDart = void Function(WidgetRef modal);
+
+final createModal = nativeLib.lookupFunction<CreateModalC, CreateModalDart>(
+  'create_modal',
+);
+final modalSetContent = nativeLib
+    .lookupFunction<ModalSetContentC, ModalSetContentDart>('modal_set_content');
+final modalAddDismissButton = nativeLib
+    .lookupFunction<ModalAddDismissButtonC, ModalAddDismissButtonDart>(
+      'modal_add_dismiss_button',
+    );
+final modalPresent = nativeLib.lookupFunction<ModalPresentC, ModalPresentDart>(
+  'modal_present',
+);
+final modalDismiss = nativeLib.lookupFunction<ModalDismissC, ModalDismissDart>(
+  'modal_dismiss',
+);

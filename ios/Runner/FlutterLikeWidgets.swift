@@ -884,6 +884,119 @@ public func navigation_set_background_color(_ navPtr: UnsafeMutableRawPointer, _
     }
 }
 
+// MARK: - Modal Widget
+
+public class ModalWidget: FlexWidget {
+    var viewController: UIViewController?
+    var dismissCallback: (() -> Void)?
+    
+    @MainActor public init(title: String) {
+        let vc = UIViewController()
+        vc.view.backgroundColor = .systemBackground
+        vc.title = title
+        viewController = vc
+        
+        super.init(view: vc.view)
+    }
+    
+    @MainActor public func setContent(_ widget: FlexWidget) {
+        guard let vc = viewController else { return }
+        
+        vc.view.subviews.forEach { $0.removeFromSuperview() }
+        vc.view.addSubview(widget.view)
+        
+        widget.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            widget.view.leadingAnchor.constraint(equalTo: vc.view.leadingAnchor),
+            widget.view.trailingAnchor.constraint(equalTo: vc.view.trailingAnchor),
+            widget.view.topAnchor.constraint(equalTo: vc.view.topAnchor),
+            widget.view.bottomAnchor.constraint(equalTo: vc.view.bottomAnchor)
+        ])
+    }
+    
+    @MainActor public func addDismissButton(title: String, callback: @escaping () -> Void) {
+        dismissCallback = callback
+        
+        let button = UIBarButtonItem(title: title, style: .done, target: self, action: #selector(dismissTapped))
+        viewController?.navigationItem.rightBarButtonItem = button
+        
+        let nav = UINavigationController(rootViewController: viewController!)
+        viewController = nav
+    }
+    
+    @objc func dismissTapped() {
+        dismissCallback?()
+    }
+}
+
+@_cdecl("create_modal")
+public func create_modal(_ titlePtr: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let title = String(cString: titlePtr)
+    return MainActor.assumeIsolated {
+        let widget = ModalWidget(title: title)
+        return Unmanaged.passRetained(widget).toOpaque()
+    }
+}
+
+@_cdecl("modal_set_content")
+public func modal_set_content(_ modalPtr: UnsafeMutableRawPointer, _ widgetPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let modal = Unmanaged<FlexWidget>.fromOpaque(modalPtr).takeUnretainedValue()
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        
+        if let modalWidget = modal as? ModalWidget {
+            modalWidget.setContent(widget)
+        }
+    }
+}
+
+@_cdecl("modal_add_dismiss_button")
+public func modal_add_dismiss_button(
+    _ modalPtr: UnsafeMutableRawPointer,
+    _ titlePtr: UnsafePointer<CChar>,
+    _ callback: @convention(c) @escaping () -> Void
+) {
+    MainActor.assumeIsolated {
+        let modal = Unmanaged<FlexWidget>.fromOpaque(modalPtr).takeUnretainedValue()
+        let title = String(cString: titlePtr)
+        
+        if let modalWidget = modal as? ModalWidget {
+            modalWidget.addDismissButton(title: title, callback: callback)
+        }
+    }
+}
+
+@_cdecl("modal_present")
+public func modal_present(_ modalPtr: UnsafeMutableRawPointer, _ fromPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let modal = Unmanaged<FlexWidget>.fromOpaque(modalPtr).takeUnretainedValue()
+        let from = Unmanaged<FlexWidget>.fromOpaque(fromPtr).takeUnretainedValue()
+        
+        guard let modalVC = (modal as? ModalWidget)?.viewController else { return }
+        
+        var presentingVC: UIViewController?
+        
+        if let nav = from as? NavigationWidget {
+            presentingVC = nav.navigationController.topViewController
+        } else if let tab = from as? TabBarWidget {
+            presentingVC = tab.tabBarController.selectedViewController
+        }
+        
+        presentingVC?.present(modalVC, animated: true)
+    }
+}
+
+@_cdecl("modal_dismiss")
+public func modal_dismiss(_ modalPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let modal = Unmanaged<FlexWidget>.fromOpaque(modalPtr).takeUnretainedValue()
+        
+        if let modalWidget = modal as? ModalWidget {
+            modalWidget.viewController?.dismiss(animated: true)
+        }
+    }
+}
+
 // MARK: - TabBarController Widget
 
 public class TabBarWidget: FlexWidget {

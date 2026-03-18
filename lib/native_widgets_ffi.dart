@@ -322,6 +322,42 @@ class TabBarWidget extends NativeWidget {
   }
 }
 
+class ModalWidget extends NativeWidget {
+  NativeCallable<Void Function()>? _dismissCallback;
+
+  ModalWidget(String title) : super(_create(title));
+
+  static WidgetRef _create(String title) {
+    final cStr = title.toNativeUtf8();
+    final ptr = createModal(cStr);
+    calloc.free(cStr);
+    return ptr;
+  }
+
+  void setContent(NativeWidget page) {
+    modalSetContent(handle, page.handle);
+  }
+
+  void addDismissButton(String title, {Function? onPressed}) {
+    final titleStr = title.toNativeUtf8();
+    if (onPressed != null) {
+      _dismissCallback = NativeCallable<Void Function()>.listener(() {
+        onPressed();
+      });
+      modalAddDismissButton(handle, titleStr, _dismissCallback!.nativeFunction);
+    }
+    calloc.free(titleStr);
+  }
+
+  void present(NativeWidget from) {
+    modalPresent(handle, from.handle);
+  }
+
+  void dismiss() {
+    modalDismiss(handle);
+  }
+}
+
 // MARK: - Container Widgets
 
 class ContainerWidget extends NativeWidget {
