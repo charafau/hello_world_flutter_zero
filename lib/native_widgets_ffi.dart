@@ -512,31 +512,33 @@ class RowWidget extends NativeWidget {
 // MARK: - List View Widget
 
 class ListViewWidget extends NativeWidget {
-  final NativeCallable<ListViewBuilderCallbackC>? _builderEndpoint;
+  static final Map<int, Map<int, NativeWidget>> _allItems = {};
+  static final Map<int, int> _allCounts = {};
+  final int _widgetId;
+  Map<int, NativeWidget> _items = {};
 
   ListViewWidget.builder({
     required int itemCount,
     required NativeWidget Function(int index) itemBuilder,
-  }) : _builderEndpoint = NativeCallable<ListViewBuilderCallbackC>.listener((
-         WidgetRef list,
-         int index,
-       ) {
-         // Async callback from Swift (pushed via NativeCallable listener)
-         // We are back on the Dart isolate thread here.
-
-         // 1. Build the widget
-         final widget = itemBuilder(index);
-
-         // 2. Push it back to Swift
-         listViewUpdateItem(list, index, widget.handle);
-       }),
+  }) : _widgetId = _allItems.length,
        super(createListView()) {
-    listViewSetBuilder(handle, itemCount, _builderEndpoint!.nativeFunction);
+    // Build all items synchronously upfront
+    for (int i = 0; i < itemCount; i++) {
+      _items[i] = itemBuilder(i);
+    }
+    _allItems[_widgetId] = _items;
+    _allCounts[_widgetId] = itemCount;
+
+    // Initialize list view with count
+    listViewSetCount(handle, itemCount);
+
+    // Immediately update all items
+    for (int i = 0; i < itemCount; i++) {
+      listViewUpdateItem(handle, i, _items[i]!.handle);
+    }
   }
 
-  // Need to clean up the builder when widgets are disposed?
-  // NativeWidget doesn't have a reliable dispose callback exposed here yet,
-  // but we are relying on Finalizer for C side.
-  // For the map, we technically leak the callback closure if we don't clear it.
-  // Ideally, we attach a finalizer to this object to remove the entry.
+  void setItemHeight(double height) {
+    listViewSetItemHeight(handle, height);
+  }
 }

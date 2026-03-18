@@ -1233,134 +1233,89 @@ public func tab_bar_get_selected_index(_ tabBarPtr: UnsafeMutableRawPointer) -> 
     }
 }
 
-// MARK: - NativeListView (UICollectionView)
+// MARK: - NativeListView (UITableView)
 
-class FlexCollectionCell: UICollectionViewCell {
-    static let id = "FlexCollectionCell"
+class FlexTableViewCell: UITableViewCell {
+    static let id = "FlexTableViewCell"
     var hostedView: UIView? {
         didSet {
-            // Remove old view if any
             oldValue?.removeFromSuperview()
             
             if let v = hostedView {
                 contentView.addSubview(v)
-                // We use flex layout inside the cell too
-                v.flex.markDirty()
-                setNeedsLayout()
+                v.translatesAutoresizingMaskIntoConstraints = false
+                NSLayoutConstraint.activate([
+                    v.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                    v.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+                    v.topAnchor.constraint(equalTo: contentView.topAnchor),
+                    v.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+                ])
             }
         }
     }
     
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        guard let hostedView = hostedView else { return }
-        
-        // Layout logic:
-        // We want the hosted view to fill the cell's CONTENT VIEW
-//        hostedView.pin.all()
-        hostedView.flex.layout() 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        hostedView?.removeFromSuperview()
+        hostedView = nil
     }
-    
-    override func sizeThatFits(_ size: CGSize) -> CGSize {
-        guard let hostedView = hostedView else { return .zero }
-        // Calculate size based on width
-        hostedView.flex.width(size.width).layout(mode: .adjustHeight)
-        return hostedView.frame.size
-    }
-    
-    // UICollectionViewCell preferredAttributes uses systemLayoutSizeFitting by default
 }
 
-    
-public class NativeListView: FlexWidget, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+public class NativeListView: FlexWidget, UITableViewDataSource, UITableViewDelegate {
     var itemCount: Int = 0
-    // Async builder: Requests index, returns nothing immediately.
-    var builder: ((Int) -> Void)?
     var cachedItems: [Int: UIView] = [:]
-    let collectionView: UICollectionView
+    let tableView: UITableView
+    var itemHeight: CGFloat = 80
     
     init() {
-        let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .vertical
-        layout.minimumLineSpacing = 10
-        // Debugging: Start with fixed size to rule out auto-sizing issues
-        layout.itemSize = CGSize(width: UIScreen.main.bounds.width - 20, height: 60)
-        // layout.estimatedItemSize = UICollectionViewFlowLayout.automaticSize 
+        tableView = UITableView(frame: .zero, style: .plain)
+        tableView.backgroundColor = .clear
+        tableView.separatorStyle = .none
         
-        // Initialize Collection View
-        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.backgroundColor = .clear // .blue for debugging?
+        super.init(view: tableView)
         
-        super.init(view: collectionView)
-        
-        collectionView.dataSource = self
-        collectionView.delegate = self
-        collectionView.register(FlexCollectionCell.self, forCellWithReuseIdentifier: FlexCollectionCell.id)
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.register(FlexTableViewCell.self, forCellReuseIdentifier: FlexTableViewCell.id)
+    }
+    
+    public func setItemHeight(_ height: CGFloat) {
+        itemHeight = height
+        tableView.reloadData()
     }
     
     public func setBuilder(count: Int, callback: @escaping (Int) -> Void) {
-        print("DEBUG: NativeListView setBuilder count: \(count)")
         self.itemCount = count
-        self.builder = callback
-        self.cachedItems.removeAll() // Clear cache on new builder
-        collectionView.reloadData()
+        tableView.reloadData()
+    }
+    
+    public func setCount(_ count: Int) {
+        self.itemCount = count
+        tableView.reloadData()
     }
     
     public func updateItem(index: Int, view: UIView) {
-        // print("DEBUG: NativeListView updateItem at \(index)")
         cachedItems[index] = view
-        
-        // Find if this cell is visible and update it immediately
-        // (Avoiding full reloadData for performance)
-        for cell in collectionView.visibleCells {
-            if let indexPath = collectionView.indexPath(for: cell), indexPath.item == index {
-                (cell as? FlexCollectionCell)?.hostedView = view
-            }
-        }
     }
     
-    // MARK: - DataSource
-    public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    // MARK: - UITableViewDataSource
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemCount
     }
     
-    public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: FlexCollectionCell.id, for: indexPath) as! FlexCollectionCell
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: FlexTableViewCell.id, for: indexPath) as! FlexTableViewCell
         
-        if let view = cachedItems[indexPath.item] {
+        if let view = cachedItems[indexPath.row] {
             cell.hostedView = view
-        } else {
-            // Cache miss
-            cell.hostedView = nil // Or a placeholder/loading view
-            
-            if let builder = builder {
-                // print("DEBUG: request builder for \(indexPath.item)")
-                builder(indexPath.item)
-            }
         }
         
         return cell
     }
     
-    // ensure cleanup?
-    
-    // MARK: - FlowLayout Delegate (Optional customization)
-    /*
-    public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        // If we didn't use automaticSize, we would calculate it here:
-        let item = items[indexPath.item]
-        // Calculate height for full width
-        let width = collectionView.bounds.width
-        item.flex.width(width).layout(mode: .adjustHeight)
-        return item.frame.size
-    }
-    */
-    
-    // Ensure the list itself lays out correctly
-    public override func layout() {
-        // print("DEBUG: NativeListView layout frame: \(view.frame)")
-        super.layout()
-        collectionView.collectionViewLayout.invalidateLayout()
+    // MARK: - UITableViewDelegate
+    public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return itemHeight
     }
 }
 
@@ -1373,8 +1328,15 @@ public func list_view_set_builder(
     let listView = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! NativeListView
     
     listView.setBuilder(count: count) { index in
-        // Call C callback to request item (Async)
         callback(listPtr, index)
+    }
+}
+
+@_cdecl("list_view_set_count")
+public func list_view_set_count(_ listPtr: UnsafeMutableRawPointer, _ count: Int) {
+    MainActor.assumeIsolated {
+        let listView = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! NativeListView
+        listView.setCount(count)
     }
 }
 
@@ -1394,6 +1356,14 @@ public func list_view_update_item(
 public func create_list_view() -> UnsafeMutableRawPointer {
     let widget = NativeListView()
     return Unmanaged.passRetained(widget).toOpaque()
+}
+
+@_cdecl("list_view_set_item_height")
+public func list_view_set_item_height(_ listPtr: UnsafeMutableRawPointer, _ height: Float) {
+    MainActor.assumeIsolated {
+        let listView = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! NativeListView
+        listView.setItemHeight(CGFloat(height))
+    }
 }
 
 // --- Layout Helper ---

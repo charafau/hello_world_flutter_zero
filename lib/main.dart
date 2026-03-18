@@ -234,8 +234,26 @@ void buildSampleLayout() {
   settingsNav.setRoot(settingsContent);
   profileNav.setRoot(profileContent);
 
+  final listNav = NavigationWidget("List");
+
+  final listViewPage = ListViewWidget.builder(
+    itemCount: 20,
+    itemBuilder: (index) {
+      return ContainerWidget(
+        child: RowWidget(
+          children: [ImageWidget.asset("doc.text"), TextWidget("Item $index")],
+        ),
+      ).padding(10);
+    },
+  )..setItemHeight(80);
+
+  final listContent = listViewPage;
+
+  listNav.setRoot(listContent);
+
   tabBar.addTab("Home", "house", homeNav);
   tabBar.addTab("Settings", "gearshape", settingsNav);
+  tabBar.addTab("List", "list.bullet", listNav);
   tabBar.addTab("Profile", "person", profileNav);
 
   tabBar.setBackgroundColor(0.95, 0.95, 0.97);
@@ -252,6 +270,8 @@ void buildSampleLayout() {
     } else if (index == 1) {
       print("Settings tab selected");
     } else if (index == 2) {
+      print("List tab selected");
+    } else if (index == 3) {
       print("Profile tab selected");
     }
   });

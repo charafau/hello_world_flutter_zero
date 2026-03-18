@@ -83,6 +83,8 @@ typedef ListViewSetBuilderC =
       Int64 count,
       Pointer<NativeFunction<ListViewBuilderCallbackC>> callback,
     );
+typedef ListViewSetItemHeightC = Void Function(WidgetRef list, Float height);
+typedef ListViewSetCountC = Void Function(WidgetRef list, Int64 count);
 typedef ContainerSetChildC = Void Function(WidgetRef parent, WidgetRef child);
 typedef LinearAddChildrenC =
     Void Function(WidgetRef parent, Pointer<WidgetRef> children, Int64 count);
@@ -167,6 +169,9 @@ typedef ListViewSetBuilderDart =
       int count,
       Pointer<NativeFunction<ListViewBuilderCallbackC>> callback,
     );
+typedef ListViewSetItemHeightDart =
+    void Function(WidgetRef list, double height);
+typedef ListViewSetCountDart = void Function(WidgetRef list, int count);
 typedef ContainerSetChildDart =
     void Function(WidgetRef parent, WidgetRef child);
 typedef LinearAddChildrenDart =
@@ -307,9 +312,17 @@ final listViewSetBuilder = nativeLib
     .lookupFunction<ListViewSetBuilderC, ListViewSetBuilderDart>(
       'list_view_set_builder',
     );
+final listViewSetCount = nativeLib
+    .lookupFunction<ListViewSetCountC, ListViewSetCountDart>(
+      'list_view_set_count',
+    );
 final listViewUpdateItem = nativeLib
     .lookupFunction<ListViewUpdateItemC, ListViewUpdateItemDart>(
       'list_view_update_item',
+    );
+final listViewSetItemHeight = nativeLib
+    .lookupFunction<ListViewSetItemHeightC, ListViewSetItemHeightDart>(
+      'list_view_set_item_height',
     );
 final createSafeArea = nativeLib
     .lookupFunction<CreateListViewC, CreateListViewDart>('create_safe_area');
