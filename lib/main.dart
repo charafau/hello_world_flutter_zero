@@ -9,37 +9,17 @@ void main() {
   buildSampleLayout();
 }
 
-// C function signature (Pointer<Int32> Function(Int32, Int32))
 typedef AddNumbersC = Int32 Function(Int32 a, Int32 b);
-
-// Dart function signature (int Function(int, int))
 typedef AddNumbersDart = int Function(int a, int b);
 final DynamicLibrary nativeLib = DynamicLibrary.process();
 
-// Look up the symbol and cast it
 final AddNumbersDart addNumbers = nativeLib
     .lookupFunction<AddNumbersC, AddNumbersDart>('add_numbers');
 
 void buildSampleLayout() {
-  final nav = NavigationWidget("Home");
+  final tabBar = TabBarWidget();
 
-  final detailPage = ScrollViewWidget(
-    child: ColumnWidget(
-      children: [
-        TextWidget("Detail Page"),
-        TextWidget("This is a new page!"),
-        ButtonWidget(
-          "Go Back",
-          onPressed: () {
-            print("Dart: Button pressed, popping!");
-            nav.pop();
-          },
-        ),
-      ],
-    ),
-  );
-
-  final homePage = ScrollViewWidget(
+  final homeContent = ScrollViewWidget(
     child: ColumnWidget(
       children: [
         RowWidget(
@@ -65,28 +45,52 @@ void buildSampleLayout() {
         TextEditorWidget("Enter description..."),
         ProgressWidget()..setProgress(0.6),
         ActivityIndicatorWidget(style: "large"),
-        ButtonWidget(
-          "Go to Details",
-          onPressed: () {
-            print("Dart: Button pressed, pushing new page!");
-            nav.push(detailPage);
-          },
-        ),
-        TextWidget("Hello World 1"),
-        TextWidget("Hello World 2"),
-        TextWidget("Hello World 3"),
-        TextWidget("Hello World 4"),
-        TextWidget("Hello World 5"),
-        TextWidget("Hello World 6"),
+        TextWidget("Home Tab Content"),
       ],
     ),
   );
 
-  final child = ContainerWidget(child: homePage).padding(10);
+  final settingsContent = ScrollViewWidget(
+    child: ColumnWidget(
+      children: [
+        TextWidget("Settings"),
+        TextFieldWidget("Search settings..."),
+        SwitchWidget(),
+        ButtonWidget(
+          "Logout",
+          onPressed: () {
+            print("Logout pressed");
+          },
+        ),
+      ],
+    ),
+  );
 
-  nav.setRoot(child);
+  final profileContent = ScrollViewWidget(
+    child: ColumnWidget(
+      children: [
+        ImageWidget.asset("person.crop.circle.fill"),
+        TextWidget("Profile"),
+        TextWidget("Member since 2024"),
+        ButtonWidget(
+          "Edit Profile",
+          onPressed: () {
+            print("Edit profile pressed");
+          },
+        ),
+      ],
+    ),
+  );
 
-  final uiViewHandle = nav.getUIViewHandle();
+  final homePage = ContainerWidget(child: homeContent).padding(10);
+  final settingsPage = ContainerWidget(child: settingsContent).padding(10);
+  final profilePage = ContainerWidget(child: profileContent).padding(10);
+
+  tabBar.addTab("Home", "house", homePage);
+  tabBar.addTab("Settings", "gearshape", settingsPage);
+  tabBar.addTab("Profile", "person", profilePage);
+
+  final uiViewHandle = tabBar.getUIViewHandle();
   final address = uiViewHandle.address;
   print("Native UIView handle (address) ready: ${uiViewHandle.address}");
   print("Calling Swift FFI function with address: $address");

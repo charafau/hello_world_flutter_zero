@@ -255,3 +255,34 @@ final displayWidgetInViewController = nativeLib
     .lookupFunction<DisplayWidgetC, DisplayWidgetDart>(
       'display_widget_in_view_controller',
     );
+
+// MARK: - Tab Bar Bindings
+typedef CreateTabBarC = WidgetRef Function();
+typedef CreateTabBarDart = WidgetRef Function();
+typedef TabBarAddTabC =
+    Void Function(
+      WidgetRef tabBar,
+      Pointer<Utf8> title,
+      Pointer<Utf8> icon,
+      WidgetRef widget,
+    );
+typedef TabBarAddTabDart =
+    void Function(
+      WidgetRef tabBar,
+      Pointer<Utf8> title,
+      Pointer<Utf8> icon,
+      WidgetRef widget,
+    );
+typedef TabBarSetSelectedIndexC = Void Function(WidgetRef tabBar, Int32 index);
+typedef TabBarSetSelectedIndexDart = void Function(WidgetRef tabBar, int index);
+
+final createTabBar = nativeLib.lookupFunction<CreateTabBarC, CreateTabBarDart>(
+  'create_tab_bar',
+);
+final tabBarAddTab = nativeLib.lookupFunction<TabBarAddTabC, TabBarAddTabDart>(
+  'tab_bar_add_tab',
+);
+final tabBarSetSelectedIndex = nativeLib
+    .lookupFunction<TabBarSetSelectedIndexC, TabBarSetSelectedIndexDart>(
+      'tab_bar_set_selected_index',
+    );

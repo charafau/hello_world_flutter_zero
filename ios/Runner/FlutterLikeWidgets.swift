@@ -775,6 +775,81 @@ public func navigation_set_root(_ navPtr: UnsafeMutableRawPointer, _ widgetPtr: 
     }
 }
 
+// MARK: - TabBarController Widget
+
+public class TabBarWidget: FlexWidget {
+    let tabBarController: UITabBarController
+    var tabs: [(String, String, UIViewController)] = [] // (title, iconName, vc)
+    
+    @MainActor public init() {
+        tabBarController = UITabBarController()
+        super.init(view: tabBarController.view)
+    }
+    
+    @MainActor public func addTab(title: String, iconName: String, widget: FlexWidget) {
+        let vc = UIViewController()
+        vc.view.backgroundColor = .systemBackground
+        vc.view.addSubview(widget.view)
+        
+        widget.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            widget.view.leadingAnchor.constraint(equalTo: vc.view.leadingAnchor),
+            widget.view.trailingAnchor.constraint(equalTo: vc.view.trailingAnchor),
+            widget.view.topAnchor.constraint(equalTo: vc.view.topAnchor),
+            widget.view.bottomAnchor.constraint(equalTo: vc.view.bottomAnchor)
+        ])
+        
+        vc.title = title
+        vc.tabBarItem = UITabBarItem(title: title, image: UIImage(systemName: iconName), selectedImage: UIImage(systemName: "\(iconName).fill"))
+        
+        tabs.append((title, iconName, vc))
+        tabBarController.viewControllers = tabs.map { $0.2 }
+    }
+    
+    @MainActor public func setSelectedIndex(_ index: Int) {
+        tabBarController.selectedIndex = index
+    }
+}
+
+@_cdecl("create_tab_bar")
+public func create_tab_bar() -> UnsafeMutableRawPointer {
+    return MainActor.assumeIsolated {
+        let widget = TabBarWidget()
+        return Unmanaged.passRetained(widget).toOpaque()
+    }
+}
+
+@_cdecl("tab_bar_add_tab")
+public func tab_bar_add_tab(
+    _ tabBarPtr: UnsafeMutableRawPointer,
+    _ titlePtr: UnsafePointer<CChar>,
+    _ iconPtr: UnsafePointer<CChar>,
+    _ widgetPtr: UnsafeMutableRawPointer
+) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        
+        let title = String(cString: titlePtr)
+        let iconName = String(cString: iconPtr)
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.addTab(title: title, iconName: iconName, widget: widget)
+        }
+    }
+}
+
+@_cdecl("tab_bar_set_selected_index")
+public func tab_bar_set_selected_index(_ tabBarPtr: UnsafeMutableRawPointer, _ index: Int) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setSelectedIndex(index)
+        }
+    }
+}
+
 // MARK: - NativeListView (UICollectionView)
 
 class FlexCollectionCell: UICollectionViewCell {

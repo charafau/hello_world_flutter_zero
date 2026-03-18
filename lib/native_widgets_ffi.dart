@@ -254,6 +254,26 @@ class NavigationWidget extends NativeWidget {
   }
 }
 
+class TabBarWidget extends NativeWidget {
+  TabBarWidget() : super(_create());
+
+  static WidgetRef _create() {
+    return createTabBar();
+  }
+
+  void addTab(String title, String icon, NativeWidget page) {
+    final titleStr = title.toNativeUtf8();
+    final iconStr = icon.toNativeUtf8();
+    tabBarAddTab(handle, titleStr, iconStr, page.handle);
+    calloc.free(titleStr);
+    calloc.free(iconStr);
+  }
+
+  void setSelectedIndex(int index) {
+    tabBarSetSelectedIndex(handle, index);
+  }
+}
+
 // MARK: - Container Widgets
 
 class ContainerWidget extends NativeWidget {
