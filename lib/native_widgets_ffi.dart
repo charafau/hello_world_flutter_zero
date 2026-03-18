@@ -542,3 +542,56 @@ class ListViewWidget extends NativeWidget {
     listViewSetItemHeight(handle, height);
   }
 }
+
+// MARK: - FlashList Widget (Dart handles windowing/recycling, Swift is just a scroll container)
+
+class FlashListWidget extends NativeWidget {
+  static final Map<int, List<NativeWidget>> _allItems = {};
+  static final Map<int, int> _allCounts = {};
+  final int _widgetId;
+  Map<int, NativeWidget> _items = {};
+
+  FlashListWidget.builder({
+    required int itemCount,
+    required NativeWidget Function(int index) itemBuilder,
+  }) : _widgetId = _allItems.length,
+       super(createFlashList()) {
+    _items = {};
+    _allItems[_widgetId] = [];
+    _allCounts[_widgetId] = itemCount;
+
+    // Build all items
+    for (int i = 0; i < itemCount; i++) {
+      _items[i] = itemBuilder(i);
+    }
+
+    flashListSetItemCount(handle, itemCount);
+
+    // Update all items
+    for (int i = 0; i < itemCount; i++) {
+      if (_items[i] != null) {
+        flashListUpdateItem(handle, i, _items[i]!.handle);
+      }
+    }
+  }
+
+  void setItemHeight(double height) {
+    flashListSetItemHeight(handle, height);
+  }
+
+  void setContentHeight(double height) {
+    flashListSetContentHeight(handle, height);
+  }
+
+  void removeItem(int index) {
+    flashListRemoveItem(handle, index);
+  }
+
+  void clear() {
+    flashListClear(handle);
+  }
+
+  double getScrollOffset() {
+    return flashListGetScrollOffset(handle);
+  }
+}

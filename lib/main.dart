@@ -236,24 +236,32 @@ void buildSampleLayout() {
 
   final listNav = NavigationWidget("List");
 
-  final listViewPage = ListViewWidget.builder(
-    itemCount: 20,
-    itemBuilder: (index) {
-      return ContainerWidget(
-        child: RowWidget(
-          children: [ImageWidget.asset("doc.text"), TextWidget("Item $index")],
-        ),
-      ).padding(10);
-    },
-  )..setItemHeight(80);
+  final flashListPage = SafeAreaWidget(
+    child:
+        FlashListWidget.builder(
+            itemCount: 100,
+            itemBuilder: (index) {
+              return ContainerWidget(
+                child: RowWidget(
+                  children: [
+                    ImageWidget.asset("doc.text"),
+                    TextWidget("Item $index"),
+                  ],
+                ),
+              ).padding(10);
+            },
+          )
+          ..setItemHeight(80)
+          ..setContentHeight(8000),
+  );
 
-  final listContent = listViewPage;
+  final listContent = flashListPage;
 
   listNav.setRoot(listContent);
 
   tabBar.addTab("Home", "house", homeNav);
   tabBar.addTab("Settings", "gearshape", settingsNav);
-  tabBar.addTab("List", "list.bullet", listNav);
+  tabBar.addTab("FlashList", "list.bullet", listNav);
   tabBar.addTab("Profile", "person", profileNav);
 
   tabBar.setBackgroundColor(0.95, 0.95, 0.97);

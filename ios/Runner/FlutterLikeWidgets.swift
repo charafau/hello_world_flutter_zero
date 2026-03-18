@@ -1352,6 +1352,153 @@ public func list_view_update_item(
     listView.updateItem(index: index, view: child.view)
 }
 
+// MARK: - FlashList (Simple ScrollView wrapper - Dart handles windowing/recycling)
+
+public class FlashListWidget: FlexWidget {
+    var itemCount: Int = 0
+    var itemHeight: CGFloat = 80
+    
+    let scrollView: UIScrollView
+    let contentStack: UIStackView
+    
+    @MainActor public init() {
+        scrollView = UIScrollView()
+        scrollView.showsVerticalScrollIndicator = true
+        scrollView.alwaysBounceVertical = true
+        scrollView.contentInsetAdjustmentBehavior = .always
+        
+        contentStack = UIStackView()
+        contentStack.axis = .vertical
+        contentStack.spacing = 0
+        contentStack.distribution = .fill
+        contentStack.alignment = .fill
+        
+        scrollView.addSubview(contentStack)
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+        
+        super.init(view: scrollView)
+    }
+    
+    @MainActor public func setItemCount(_ count: Int) {
+        self.itemCount = count
+    }
+    
+    @MainActor public func setItemHeight(_ height: CGFloat) {
+        self.itemHeight = height
+    }
+    
+    @MainActor public func setContentHeight(_ height: CGFloat) {
+        NSLayoutConstraint.activate([
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+        ])
+        scrollView.contentSize = CGSize(width: scrollView.bounds.width, height: height)
+    }
+    
+    @MainActor public func updateItem(at index: Int, view: UIView) {
+        // Remove existing view at index if any
+        if index < contentStack.arrangedSubviews.count {
+            let existingView = contentStack.arrangedSubviews[index]
+            existingView.removeFromSuperview()
+        }
+        
+        // Add new view with fixed height
+        view.translatesAutoresizingMaskIntoConstraints = false
+        contentStack.insertArrangedSubview(view, at: index)
+        
+        NSLayoutConstraint.activate([
+            view.heightAnchor.constraint(equalToConstant: itemHeight),
+            view.widthAnchor.constraint(equalTo: contentStack.widthAnchor)
+        ])
+    }
+    
+    @MainActor public func removeItem(at index: Int) {
+        if index < contentStack.arrangedSubviews.count {
+            let view = contentStack.arrangedSubviews[index]
+            view.removeFromSuperview()
+        }
+    }
+    
+    @MainActor public func clear() {
+        contentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+    }
+    
+    @MainActor public func getScrollOffset() -> CGFloat {
+        return scrollView.contentOffset.y
+    }
+    
+    @MainActor public func setScrollOffset(_ offset: CGFloat) {
+        scrollView.contentOffset = CGPoint(x: 0, y: offset)
+    }
+}
+
+@_cdecl("create_flash_list")
+public func create_flash_list() -> UnsafeMutableRawPointer {
+    return MainActor.assumeIsolated {
+        let widget = FlashListWidget()
+        return Unmanaged.passRetained(widget).toOpaque()
+    }
+}
+
+@_cdecl("flash_list_set_item_count")
+public func flash_list_set_item_count(_ listPtr: UnsafeMutableRawPointer, _ count: Int) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        list.setItemCount(count)
+    }
+}
+
+@_cdecl("flash_list_set_item_height")
+public func flash_list_set_item_height(_ listPtr: UnsafeMutableRawPointer, _ height: Float) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        list.setItemHeight(CGFloat(height))
+    }
+}
+
+@_cdecl("flash_list_set_content_height")
+public func flash_list_set_content_height(_ listPtr: UnsafeMutableRawPointer, _ height: Float) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        list.setContentHeight(CGFloat(height))
+    }
+}
+
+@_cdecl("flash_list_update_item")
+public func flash_list_update_item(_ listPtr: UnsafeMutableRawPointer, _ index: Int, _ widgetPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        list.updateItem(at: index, view: widget.view)
+    }
+}
+
+@_cdecl("flash_list_remove_item")
+public func flash_list_remove_item(_ listPtr: UnsafeMutableRawPointer, _ index: Int) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        list.removeItem(at: index)
+    }
+}
+
+@_cdecl("flash_list_clear")
+public func flash_list_clear(_ listPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        list.clear()
+    }
+}
+
+@_cdecl("flash_list_get_scroll_offset")
+public func flash_list_get_scroll_offset(_ listPtr: UnsafeMutableRawPointer) -> Float {
+    return MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        return Float(list.getScrollOffset())
+    }
+}
+
 @_cdecl("create_list_view")
 public func create_list_view() -> UnsafeMutableRawPointer {
     let widget = NativeListView()

@@ -339,6 +339,59 @@ final widgetLayoutRoot = nativeLib
     .lookupFunction<WidgetLayoutRootC, WidgetLayoutRootDart>(
       'widget_layout_root',
     );
+
+// MARK: - FlashList Bindings
+typedef CreateFlashListC = WidgetRef Function();
+typedef CreateFlashListDart = WidgetRef Function();
+typedef FlashListSetItemCountC = Void Function(WidgetRef list, Int64 count);
+typedef FlashListSetItemCountDart = void Function(WidgetRef list, int count);
+typedef FlashListSetItemHeightC = Void Function(WidgetRef list, Float height);
+typedef FlashListSetItemHeightDart =
+    void Function(WidgetRef list, double height);
+typedef FlashListSetContentHeightC =
+    Void Function(WidgetRef list, Float height);
+typedef FlashListSetContentHeightDart =
+    void Function(WidgetRef list, double height);
+typedef FlashListUpdateItemC =
+    Void Function(WidgetRef list, Int64 index, WidgetRef widget);
+typedef FlashListUpdateItemDart =
+    void Function(WidgetRef list, int index, WidgetRef widget);
+typedef FlashListRemoveItemC = Void Function(WidgetRef list, Int64 index);
+typedef FlashListRemoveItemDart = void Function(WidgetRef list, int index);
+typedef FlashListClearC = Void Function(WidgetRef list);
+typedef FlashListClearDart = void Function(WidgetRef list);
+typedef FlashListGetScrollOffsetC = Float Function(WidgetRef list);
+typedef FlashListGetScrollOffsetDart = double Function(WidgetRef list);
+
+final createFlashList = nativeLib
+    .lookupFunction<CreateFlashListC, CreateFlashListDart>('create_flash_list');
+final flashListSetItemCount = nativeLib
+    .lookupFunction<FlashListSetItemCountC, FlashListSetItemCountDart>(
+      'flash_list_set_item_count',
+    );
+final flashListSetItemHeight = nativeLib
+    .lookupFunction<FlashListSetItemHeightC, FlashListSetItemHeightDart>(
+      'flash_list_set_item_height',
+    );
+final flashListSetContentHeight = nativeLib
+    .lookupFunction<FlashListSetContentHeightC, FlashListSetContentHeightDart>(
+      'flash_list_set_content_height',
+    );
+final flashListUpdateItem = nativeLib
+    .lookupFunction<FlashListUpdateItemC, FlashListUpdateItemDart>(
+      'flash_list_update_item',
+    );
+final flashListRemoveItem = nativeLib
+    .lookupFunction<FlashListRemoveItemC, FlashListRemoveItemDart>(
+      'flash_list_remove_item',
+    );
+final flashListClear = nativeLib
+    .lookupFunction<FlashListClearC, FlashListClearDart>('flash_list_clear');
+final flashListGetScrollOffset = nativeLib
+    .lookupFunction<FlashListGetScrollOffsetC, FlashListGetScrollOffsetDart>(
+      'flash_list_get_scroll_offset',
+    );
+
 final getUIViewFromWidget = nativeLib
     .lookupFunction<GetUIViewFromWidgetC, GetUIViewFromWidgetDart>(
       'get_ui_view_from_widget',
