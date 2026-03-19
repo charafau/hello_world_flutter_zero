@@ -193,7 +193,25 @@ public class ImageWidget: FlexWidget {
         let imgView = UIImageView(image: UIImage(systemName: systemName))
         imgView.contentMode = .scaleAspectFit
         super.init(view: imgView)
-        self.view.flex.size(50) // Default size
+        self.view.flex.size(50)
+    }
+    
+    @MainActor public init(url: String) {
+        let imgView = UIImageView()
+        imgView.contentMode = .scaleAspectFit
+        super.init(view: imgView)
+        self.view.flex.size(200)
+        
+        guard let imageUrl = URL(string: url) else { return }
+        
+        let viewRef = self.view
+        URLSession.shared.dataTask(with: imageUrl) { data, _, error in
+            guard let data = data, error == nil, let image = UIImage(data: data) else { return }
+            DispatchQueue.main.async {
+                imgView.image = image
+                viewRef.flex.layout()
+            }
+        }.resume()
     }
 }
 
@@ -201,6 +219,150 @@ public class SwitchWidget: FlexWidget {
     public init() {
         let toggle = UISwitch()
         super.init(view: toggle)
+    }
+}
+
+// MARK: - TextField Widget
+
+public class TextFieldWidget: FlexWidget, UITextFieldDelegate {
+    private var onChanged: ((String) -> Void)?
+    
+    @MainActor public init(placeholder: String) {
+        let textField = UITextField()
+        textField.placeholder = placeholder
+        textField.borderStyle = .roundedRect
+        super.init(view: textField)
+        textField.delegate = self
+        self.view.flex.height(44).paddingHorizontal(10)
+    }
+    
+    func setOnChanged(_ callback: @escaping (String) -> Void) {
+        self.onChanged = callback
+    }
+    
+    public func textFieldDidChangeSelection(_ textField: UITextField) {
+        onChanged?(textField.text ?? "")
+    }
+}
+
+// MARK: - TextEditor Widget
+
+public class TextEditorWidget: FlexWidget {
+    @MainActor public init(text: String) {
+        let textView = UITextView()
+        textView.text = text
+        textView.font = UIFont.systemFont(ofSize: 16)
+        textView.layer.borderColor = UIColor.systemGray4.cgColor
+        textView.layer.borderWidth = 1
+        textView.layer.cornerRadius = 8
+        super.init(view: textView)
+        self.view.flex.height(100).padding(8)
+    }
+}
+
+// MARK: - ActivityIndicator Widget
+
+public class ActivityIndicatorWidget: FlexWidget {
+    @MainActor public init(style: String) {
+        let indicator = UIActivityIndicatorView(style: style == "large" ? .large : .medium)
+        indicator.startAnimating()
+        super.init(view: indicator)
+    }
+    
+    public func stopAnimating() {
+        (view as? UIActivityIndicatorView)?.stopAnimating()
+    }
+}
+
+// MARK: - ProgressView Widget
+
+public class ProgressWidget: FlexWidget {
+    @MainActor public init() {
+        let progress = UIProgressView(progressViewStyle: .default)
+        progress.progress = 0.5
+        super.init(view: progress)
+        self.view.flex.height(4)
+    }
+    
+    public func setProgress(_ value: Float) {
+        (view as? UIProgressView)?.setProgress(value, animated: true)
+    }
+}
+
+// MARK: - Slider Widget
+
+public class SliderWidget: FlexWidget {
+    private var onChanged: ((Float) -> Void)?
+    
+    @MainActor public init(min: Float = 0, max: Float = 1, value: Float = 0.5) {
+        let slider = UISlider()
+        slider.minimumValue = min
+        slider.maximumValue = max
+        slider.value = value
+        super.init(view: slider)
+        
+        slider.addTarget(self, action: #selector(sliderChanged), for: .valueChanged)
+    }
+    
+    @objc func sliderChanged(_ sender: UISlider) {
+        onChanged?(sender.value)
+    }
+    
+    public func setOnChanged(_ callback: @escaping (Float) -> Void) {
+        self.onChanged = callback
+    }
+}
+
+// MARK: - Chip Widget
+
+public class ChipWidget: FlexWidget {
+    @MainActor public init(text: String) {
+        let label = UILabel()
+        label.text = text
+        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.textColor = .white
+        label.backgroundColor = .systemBlue
+        label.textAlignment = .center
+        
+        // Calculate size needed for text
+        label.sizeToFit()
+        
+        // Add padding: 20px horizontal, 14px vertical (total 40px height)
+        let width = label.frame.width + 40
+        let height: CGFloat = 40
+        
+        // Set frame
+        label.frame = CGRect(x: 0, y: 0, width: width, height: height)
+        
+        // Apply corner radius after setting frame
+        label.layer.cornerRadius = height / 2
+        label.layer.masksToBounds = true
+        
+        super.init(view: label)
+    }
+}
+
+// MARK: - SegmentedControl Widget
+
+public class SegmentedControlWidget: FlexWidget {
+    private var segments: [String]
+    private var onChanged: ((Int) -> Void)?
+    
+    @MainActor public init(segments: [String]) {
+        let control = UISegmentedControl(items: segments)
+        control.selectedSegmentIndex = 0
+        self.segments = segments
+        super.init(view: control)
+        
+        control.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
+    }
+    
+    @objc func segmentChanged(_ sender: UISegmentedControl) {
+        onChanged?(sender.selectedSegmentIndex)
+    }
+    
+    func setOnChanged(_ callback: @escaping (Int) -> Void) {
+        self.onChanged = callback
     }
 }
 
@@ -231,9 +393,80 @@ public func create_image(_ name: UnsafePointer<CChar>) -> UnsafeMutableRawPointe
     }
 }
 
+@_cdecl("create_image_from_url")
+public func create_image_from_url(_ url: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let str = String(cString: url)
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(ImageWidget(url: str)).toOpaque()
+    }
+}
+
 @_cdecl("create_switch")
 public func create_switch() -> UnsafeMutableRawPointer {
     return Unmanaged.passRetained(SwitchWidget()).toOpaque()
+}
+
+@_cdecl("create_slider")
+public func create_slider(_ min: Float, _ max: Float, _ value: Float) -> UnsafeMutableRawPointer {
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(SliderWidget(min: min, max: max, value: value)).toOpaque()
+    }
+}
+
+@_cdecl("create_chip")
+public func create_chip(_ text: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let str = String(cString: text)
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(ChipWidget(text: str)).toOpaque()
+    }
+}
+
+@_cdecl("create_text_field")
+public func create_text_field(_ placeholder: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let str = String(cString: placeholder)
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(TextFieldWidget(placeholder: str)).toOpaque()
+    }
+}
+
+@_cdecl("create_text_editor")
+public func create_text_editor(_ text: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let str = String(cString: text)
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(TextEditorWidget(text: str)).toOpaque()
+    }
+}
+
+@_cdecl("create_activity_indicator")
+public func create_activity_indicator(_ style: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let str = String(cString: style)
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(ActivityIndicatorWidget(style: str)).toOpaque()
+    }
+}
+
+@_cdecl("create_progress_view")
+public func create_progress_view() -> UnsafeMutableRawPointer {
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(ProgressWidget()).toOpaque()
+    }
+}
+
+@_cdecl("create_segmented_control")
+public func create_segmented_control(_ segmentsJson: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let jsonStr = String(cString: segmentsJson)
+    let segments = jsonStr.components(separatedBy: "|")
+    return MainActor.assumeIsolated {
+        Unmanaged.passRetained(SegmentedControlWidget(segments: segments)).toOpaque()
+    }
+}
+
+@_cdecl("progress_set_progress")
+public func progress_set_progress(_ ptr: UnsafeMutableRawPointer, _ value: Float) {
+    let widget = Unmanaged<FlexWidget>.fromOpaque(ptr).takeUnretainedValue()
+    if let progress = widget as? ProgressWidget {
+        progress.setProgress(value)
+    }
 }
 
 @_cdecl("create_container")
@@ -244,6 +477,123 @@ public func create_container() -> UnsafeMutableRawPointer {
 @_cdecl("create_card")
 public func create_card() -> UnsafeMutableRawPointer {
     return Unmanaged.passRetained(CardWidget()).toOpaque()
+}
+
+// MARK: - NavigationController Widget
+
+public class NavigationWidget: FlexWidget {
+    let navigationController: UINavigationController
+    var rootViewController: UIViewController?
+    var leftBarButtonCallback: (() -> Void)?
+    var rightBarButtonCallback: (() -> Void)?
+    
+    @MainActor public init(title: String) {
+        let vc = UIViewController()
+        vc.view.backgroundColor = .systemBackground
+        vc.title = title
+        
+        rootViewController = vc
+        navigationController = UINavigationController(rootViewController: vc)
+        
+        super.init(view: navigationController.view)
+    }
+    
+    @MainActor public func setRoot(_ widget: FlexWidget) {
+        guard let rootVC = rootViewController else { return }
+        
+        rootVC.view.subviews.forEach { $0.removeFromSuperview() }
+        rootVC.view.addSubview(widget.view)
+        
+        widget.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            widget.view.leadingAnchor.constraint(equalTo: rootVC.view.leadingAnchor),
+            widget.view.trailingAnchor.constraint(equalTo: rootVC.view.trailingAnchor),
+            widget.view.topAnchor.constraint(equalTo: rootVC.view.topAnchor),
+            widget.view.bottomAnchor.constraint(equalTo: rootVC.view.bottomAnchor)
+        ])
+    }
+    
+    @MainActor public func push(_ widget: FlexWidget, title: String? = nil, colorR: Float = 0, colorG: Float = 0, colorB: Float = 0) {
+        let vc = UIViewController()
+        vc.view.backgroundColor = .systemBackground
+        vc.view.addSubview(widget.view)
+        
+        if let title = title {
+            vc.title = title
+            
+            if colorR > 0 || colorG > 0 || colorB > 0 {
+                let color = UIColor(red: CGFloat(colorR), green: CGFloat(colorG), blue: CGFloat(colorB), alpha: 1.0)
+                vc.navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: color]
+            }
+        }
+        
+        widget.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            widget.view.leadingAnchor.constraint(equalTo: vc.view.leadingAnchor),
+            widget.view.trailingAnchor.constraint(equalTo: vc.view.trailingAnchor),
+            widget.view.topAnchor.constraint(equalTo: vc.view.topAnchor),
+            widget.view.bottomAnchor.constraint(equalTo: vc.view.bottomAnchor)
+        ])
+        
+        navigationController.pushViewController(vc, animated: true)
+    }
+    
+    @MainActor public func pop() {
+        navigationController.popViewController(animated: true)
+    }
+    
+    @MainActor public func setTitle(_ title: String) {
+        navigationController.topViewController?.title = title
+    }
+    
+    @MainActor public func setNavigationBarTitle(_ title: String, colorR: Float = 0, colorG: Float = 0, colorB: Float = 0) {
+        guard let vc = navigationController.topViewController else { return }
+        vc.title = title
+        
+        if colorR > 0 || colorG > 0 || colorB > 0 {
+            let color = UIColor(red: CGFloat(colorR), green: CGFloat(colorG), blue: CGFloat(colorB), alpha: 1.0)
+            vc.navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: color]
+        }
+    }
+    
+    @MainActor public func addLeftBarButton(title: String, iconName: String?, callback: @escaping () -> Void) {
+        leftBarButtonCallback = callback
+        
+        var barButtonItem: UIBarButtonItem
+        if let icon = iconName {
+            barButtonItem = UIBarButtonItem(image: UIImage(systemName: icon), style: .plain, target: self, action: #selector(leftBarButtonTapped))
+        } else {
+            barButtonItem = UIBarButtonItem(title: title, style: .plain, target: self, action: #selector(leftBarButtonTapped))
+        }
+        
+        navigationController.topViewController?.navigationItem.leftBarButtonItem = barButtonItem
+    }
+    
+    @objc func leftBarButtonTapped() {
+        leftBarButtonCallback?()
+    }
+    
+    @MainActor public func addRightBarButton(title: String, iconName: String?, callback: @escaping () -> Void) {
+        rightBarButtonCallback = callback
+        
+        var barButtonItem: UIBarButtonItem
+        if let icon = iconName {
+            barButtonItem = UIBarButtonItem(image: UIImage(systemName: icon), style: .plain, target: self, action: #selector(rightBarButtonTapped))
+        } else {
+            barButtonItem = UIBarButtonItem(title: title, style: .plain, target: self, action: #selector(rightBarButtonTapped))
+        }
+        
+        navigationController.topViewController?.navigationItem.rightBarButtonItem = barButtonItem
+    }
+    
+    @objc func rightBarButtonTapped() {
+        rightBarButtonCallback?()
+    }
+    
+    @MainActor public func setNavigationBarBackgroundColor(r: Float, g: Float, b: Float) {
+        let color = UIColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: 1.0)
+        navigationController.navigationBar.barTintColor = color
+    }
 }
 
 @_cdecl("create_column")
@@ -364,31 +714,52 @@ public func linear_add_children(
 class FlexScrollView: UIScrollView {
     weak var contentContainer: UIView?
     
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+    
+    private func setup() {
+        alwaysBounceVertical = true
+        showsVerticalScrollIndicator = true
+    }
+    
     override func layoutSubviews() {
         super.layoutSubviews()
         
         guard let contentContainer = contentContainer else { return }
         
-        // Position contentContainer to fill width, at top
-        contentContainer.frame = CGRect(x: 0, y: 0, width: bounds.width, height: contentContainer.frame.height)
+        // Only proceed if we have a valid width
+        guard bounds.width > 0 else { return }
         
-        // Layout the contentContainer
-        contentContainer.flex.layout(mode: .adjustHeight)
+        // Set width first, then layout to calculate height
+        contentContainer.flex.width(bounds.width).layout(mode: .adjustHeight)
+        
+        // Get the calculated height from frame
+        let calculatedHeight = contentContainer.frame.height
+        
+        // Set the frame with calculated height
+        contentContainer.frame = CGRect(x: 0, y: 0, width: bounds.width, height: calculatedHeight)
         
         // Sets contentSize
-        self.contentSize = contentContainer.frame.size
+        self.contentSize = CGSize(width: bounds.width, height: max(calculatedHeight, bounds.height))
         
         print("DEBUG: FlexScrollView layout. Frame: \(self.frame), ContentFrame: \(contentContainer.frame), ContentSize: \(self.contentSize)")
     }
 }
 
 public class ScrollWidget: FlexWidget {
+    let scrollView: FlexScrollView = FlexScrollView()
     public let contentContainer = UIView()
     
     @MainActor init() {
-        let scrollView = FlexScrollView()
         scrollView.contentContainer = contentContainer
-        scrollView.backgroundColor = .clear // maybe .red for debugging?
+        scrollView.backgroundColor = .systemBackground
         
         super.init(view: scrollView)
         
@@ -398,7 +769,13 @@ public class ScrollWidget: FlexWidget {
         scrollView.addSubview(contentContainer)
     }
     
+    @MainActor public override func layout() {
+        // Ensure scrollView fills its container via FlexLayout
+        scrollView.flex.layout(mode: .fitContainer)
+    }
+    
     @MainActor public func setChild(_ childView: UIView) {
+        // Add the child to contentContainer
         contentContainer.flex.addItem(childView)
     }
     
@@ -413,134 +790,532 @@ public func create_scroll_view() -> UnsafeMutableRawPointer {
     }
 }
 
-// MARK: - NativeListView (UICollectionView)
+@_cdecl("create_navigation")
+public func create_navigation(_ title: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let titleStr = String(cString: title)
+    return MainActor.assumeIsolated {
+        let widget = NavigationWidget(title: titleStr)
+        return Unmanaged.passRetained(widget).toOpaque()
+    }
+}
 
-class FlexCollectionCell: UICollectionViewCell {
-    static let id = "FlexCollectionCell"
+@_cdecl("navigation_push")
+public func navigation_push(_ navPtr: UnsafeMutableRawPointer, _ widgetPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.push(widget)
+        }
+    }
+}
+
+@_cdecl("navigation_push_with_title")
+public func navigation_push_with_title(
+    _ navPtr: UnsafeMutableRawPointer,
+    _ widgetPtr: UnsafeMutableRawPointer,
+    _ titlePtr: UnsafePointer<CChar>,
+    _ colorR: Float,
+    _ colorG: Float,
+    _ colorB: Float
+) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        let title = String(cString: titlePtr)
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.push(widget, title: title, colorR: colorR, colorG: colorG, colorB: colorB)
+        }
+    }
+}
+
+@_cdecl("navigation_pop")
+public func navigation_pop(_ navPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.pop()
+        }
+    }
+}
+
+@_cdecl("navigation_set_root")
+public func navigation_set_root(_ navPtr: UnsafeMutableRawPointer, _ widgetPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.setRoot(widget)
+        }
+    }
+}
+
+@_cdecl("navigation_set_title")
+public func navigation_set_title(_ navPtr: UnsafeMutableRawPointer, _ titlePtr: UnsafePointer<CChar>, _ colorR: Float, _ colorG: Float, _ colorB: Float) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let title = String(cString: titlePtr)
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.setNavigationBarTitle(title, colorR: colorR, colorG: colorG, colorB: colorB)
+        }
+    }
+}
+
+@_cdecl("navigation_add_left_bar_button")
+public func navigation_add_left_bar_button(
+    _ navPtr: UnsafeMutableRawPointer,
+    _ titlePtr: UnsafePointer<CChar>,
+    _ iconPtr: UnsafePointer<CChar>,
+    _ callback: @convention(c) @escaping () -> Void
+) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let title = String(cString: titlePtr)
+        let icon = String(cString: iconPtr)
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.addLeftBarButton(title: title, iconName: icon.isEmpty ? nil : icon, callback: callback)
+        }
+    }
+}
+
+@_cdecl("navigation_add_right_bar_button")
+public func navigation_add_right_bar_button(
+    _ navPtr: UnsafeMutableRawPointer,
+    _ titlePtr: UnsafePointer<CChar>,
+    _ iconPtr: UnsafePointer<CChar>,
+    _ callback: @convention(c) @escaping () -> Void
+) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        let title = String(cString: titlePtr)
+        let icon = String(cString: iconPtr)
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.addRightBarButton(title: title, iconName: icon.isEmpty ? nil : icon, callback: callback)
+        }
+    }
+}
+
+@_cdecl("navigation_set_background_color")
+public func navigation_set_background_color(_ navPtr: UnsafeMutableRawPointer, _ r: Float, _ g: Float, _ b: Float) {
+    MainActor.assumeIsolated {
+        let nav = Unmanaged<FlexWidget>.fromOpaque(navPtr).takeUnretainedValue()
+        
+        if let navWidget = nav as? NavigationWidget {
+            navWidget.setNavigationBarBackgroundColor(r: r, g: g, b: b)
+        }
+    }
+}
+
+// MARK: - Modal Widget
+
+public class ModalWidget: FlexWidget {
+    var viewController: UIViewController?
+    var dismissCallback: (() -> Void)?
+    
+    @MainActor public init(title: String) {
+        let vc = UIViewController()
+        vc.view.backgroundColor = .systemBackground
+        vc.title = title
+        viewController = vc
+        
+        super.init(view: vc.view)
+    }
+    
+    @MainActor public func setContent(_ widget: FlexWidget) {
+        guard let vc = viewController else { return }
+        
+        vc.view.subviews.forEach { $0.removeFromSuperview() }
+        vc.view.addSubview(widget.view)
+        
+        widget.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            widget.view.leadingAnchor.constraint(equalTo: vc.view.leadingAnchor),
+            widget.view.trailingAnchor.constraint(equalTo: vc.view.trailingAnchor),
+            widget.view.topAnchor.constraint(equalTo: vc.view.topAnchor),
+            widget.view.bottomAnchor.constraint(equalTo: vc.view.bottomAnchor)
+        ])
+    }
+    
+    @MainActor public func addDismissButton(title: String, callback: @escaping () -> Void) {
+        dismissCallback = callback
+        
+        let button = UIBarButtonItem(title: title, style: .done, target: self, action: #selector(dismissTapped))
+        viewController?.navigationItem.rightBarButtonItem = button
+        
+        let nav = UINavigationController(rootViewController: viewController!)
+        viewController = nav
+    }
+    
+    @objc func dismissTapped() {
+        dismissCallback?()
+    }
+}
+
+@_cdecl("create_modal")
+public func create_modal(_ titlePtr: UnsafePointer<CChar>) -> UnsafeMutableRawPointer {
+    let title = String(cString: titlePtr)
+    return MainActor.assumeIsolated {
+        let widget = ModalWidget(title: title)
+        return Unmanaged.passRetained(widget).toOpaque()
+    }
+}
+
+@_cdecl("modal_set_content")
+public func modal_set_content(_ modalPtr: UnsafeMutableRawPointer, _ widgetPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let modal = Unmanaged<FlexWidget>.fromOpaque(modalPtr).takeUnretainedValue()
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        
+        if let modalWidget = modal as? ModalWidget {
+            modalWidget.setContent(widget)
+        }
+    }
+}
+
+@_cdecl("modal_add_dismiss_button")
+public func modal_add_dismiss_button(
+    _ modalPtr: UnsafeMutableRawPointer,
+    _ titlePtr: UnsafePointer<CChar>,
+    _ callback: @convention(c) @escaping () -> Void
+) {
+    MainActor.assumeIsolated {
+        let modal = Unmanaged<FlexWidget>.fromOpaque(modalPtr).takeUnretainedValue()
+        let title = String(cString: titlePtr)
+        
+        if let modalWidget = modal as? ModalWidget {
+            modalWidget.addDismissButton(title: title, callback: callback)
+        }
+    }
+}
+
+@_cdecl("modal_present")
+public func modal_present(_ modalPtr: UnsafeMutableRawPointer, _ fromPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let modal = Unmanaged<FlexWidget>.fromOpaque(modalPtr).takeUnretainedValue()
+        let from = Unmanaged<FlexWidget>.fromOpaque(fromPtr).takeUnretainedValue()
+        
+        guard let modalVC = (modal as? ModalWidget)?.viewController else { return }
+        
+        var presentingVC: UIViewController?
+        
+        if let nav = from as? NavigationWidget {
+            presentingVC = nav.navigationController.topViewController
+        } else if let tab = from as? TabBarWidget {
+            presentingVC = tab.tabBarController.selectedViewController
+        }
+        
+        presentingVC?.present(modalVC, animated: true)
+    }
+}
+
+@_cdecl("modal_dismiss")
+public func modal_dismiss(_ modalPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let modal = Unmanaged<FlexWidget>.fromOpaque(modalPtr).takeUnretainedValue()
+        
+        if let modalWidget = modal as? ModalWidget {
+            modalWidget.viewController?.dismiss(animated: true)
+        }
+    }
+}
+
+// MARK: - TabBarController Widget
+
+public class TabBarWidget: FlexWidget, UITabBarControllerDelegate {
+    let tabBarController: UITabBarController
+    var tabs: [(String, String, UIViewController)] = [] // (title, iconName, vc)
+    var onTabSelected: ((Int) -> Void)?
+    
+    @MainActor public init() {
+        tabBarController = UITabBarController()
+        super.init(view: tabBarController.view)
+        tabBarController.delegate = self
+    }
+    
+    @MainActor public func addTab(title: String, iconName: String, widget: FlexWidget) {
+        let vc = UIViewController()
+        vc.view.backgroundColor = .systemBackground
+        vc.view.addSubview(widget.view)
+        
+        widget.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            widget.view.leadingAnchor.constraint(equalTo: vc.view.leadingAnchor),
+            widget.view.trailingAnchor.constraint(equalTo: vc.view.trailingAnchor),
+            widget.view.topAnchor.constraint(equalTo: vc.view.topAnchor),
+            widget.view.bottomAnchor.constraint(equalTo: vc.view.bottomAnchor)
+        ])
+        
+        vc.title = title
+        vc.tabBarItem = UITabBarItem(title: title, image: UIImage(systemName: iconName), selectedImage: UIImage(systemName: "\(iconName).fill"))
+        
+        tabs.append((title, iconName, vc))
+        tabBarController.viewControllers = tabs.map { $0.2 }
+    }
+    
+    @MainActor public func setSelectedIndex(_ index: Int) {
+        tabBarController.selectedIndex = index
+    }
+    
+    @MainActor public func setOnTabSelected(_ callback: @escaping (Int) -> Void) {
+        onTabSelected = callback
+    }
+    
+    public func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+        if let callback = onTabSelected {
+            let index = tabBarController.selectedIndex
+            callback(index)
+        }
+    }
+    
+    @MainActor public func setBackgroundColor(r: Float, g: Float, b: Float, a: Float = 1.0) {
+        let color = UIColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: CGFloat(a))
+        tabBarController.tabBar.backgroundColor = color
+    }
+    
+    @MainActor public func setTintColor(r: Float, g: Float, b: Float) {
+        let color = UIColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: 1.0)
+        tabBarController.tabBar.tintColor = color
+    }
+    
+    @MainActor public func setUnselectedItemColor(r: Float, g: Float, b: Float) {
+        let color = UIColor(red: CGFloat(r), green: CGFloat(g), blue: CGFloat(b), alpha: 1.0)
+        tabBarController.tabBar.unselectedItemTintColor = color
+    }
+    
+    @MainActor public func setBadge(index: Int, badge: String?) {
+        guard index < tabs.count else { return }
+        tabs[index].2.tabBarItem.badgeValue = badge
+    }
+    
+    @MainActor public func hideTabBar(_ hidden: Bool) {
+        tabBarController.tabBar.isHidden = hidden
+    }
+    
+    @MainActor public func getSelectedIndex() -> Int {
+        return tabBarController.selectedIndex
+    }
+}
+
+@_cdecl("create_tab_bar")
+public func create_tab_bar() -> UnsafeMutableRawPointer {
+    return MainActor.assumeIsolated {
+        let widget = TabBarWidget()
+        return Unmanaged.passRetained(widget).toOpaque()
+    }
+}
+
+@_cdecl("tab_bar_add_tab")
+public func tab_bar_add_tab(
+    _ tabBarPtr: UnsafeMutableRawPointer,
+    _ titlePtr: UnsafePointer<CChar>,
+    _ iconPtr: UnsafePointer<CChar>,
+    _ widgetPtr: UnsafeMutableRawPointer
+) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        
+        let title = String(cString: titlePtr)
+        let iconName = String(cString: iconPtr)
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.addTab(title: title, iconName: iconName, widget: widget)
+        }
+    }
+}
+
+@_cdecl("tab_bar_set_selected_index")
+public func tab_bar_set_selected_index(_ tabBarPtr: UnsafeMutableRawPointer, _ index: Int) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setSelectedIndex(index)
+        }
+    }
+}
+
+@_cdecl("tab_bar_set_background_color")
+public func tab_bar_set_background_color(_ tabBarPtr: UnsafeMutableRawPointer, _ r: Float, _ g: Float, _ b: Float, _ a: Float) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setBackgroundColor(r: r, g: g, b: b, a: a)
+        }
+    }
+}
+
+@_cdecl("tab_bar_set_tint_color")
+public func tab_bar_set_tint_color(_ tabBarPtr: UnsafeMutableRawPointer, _ r: Float, _ g: Float, _ b: Float) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setTintColor(r: r, g: g, b: b)
+        }
+    }
+}
+
+@_cdecl("tab_bar_set_unselected_item_color")
+public func tab_bar_set_unselected_item_color(_ tabBarPtr: UnsafeMutableRawPointer, _ r: Float, _ g: Float, _ b: Float) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setUnselectedItemColor(r: r, g: g, b: b)
+        }
+    }
+}
+
+@_cdecl("tab_bar_set_badge")
+public func tab_bar_set_badge(_ tabBarPtr: UnsafeMutableRawPointer, _ index: Int, _ badgePtr: UnsafePointer<CChar>?) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        var badgeValue: String? = nil
+        if let ptr = badgePtr {
+            let badgeStr = String(cString: ptr)
+            if !badgeStr.isEmpty {
+                badgeValue = badgeStr
+            }
+        }
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setBadge(index: index, badge: badgeValue)
+        }
+    }
+}
+
+@_cdecl("tab_bar_hide")
+public func tab_bar_hide(_ tabBarPtr: UnsafeMutableRawPointer, _ hidden: Bool) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.hideTabBar(hidden)
+        }
+    }
+}
+
+@_cdecl("tab_bar_set_on_tab_selected")
+public func tab_bar_set_on_tab_selected(
+    _ tabBarPtr: UnsafeMutableRawPointer,
+    _ callback: @convention(c) @escaping () -> Void
+) {
+    MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            tabBarWidget.setOnTabSelected { index in
+                callback()
+            }
+        }
+    }
+}
+
+@_cdecl("tab_bar_get_selected_index")
+public func tab_bar_get_selected_index(_ tabBarPtr: UnsafeMutableRawPointer) -> Int {
+    return MainActor.assumeIsolated {
+        let tabBar = Unmanaged<FlexWidget>.fromOpaque(tabBarPtr).takeUnretainedValue()
+        
+        if let tabBarWidget = tabBar as? TabBarWidget {
+            return tabBarWidget.getSelectedIndex()
+        }
+        return 0
+    }
+}
+
+// MARK: - NativeListView (UITableView)
+
+class FlexTableViewCell: UITableViewCell {
+    static let id = "FlexTableViewCell"
     var hostedView: UIView? {
         didSet {
-            // Remove old view if any
             oldValue?.removeFromSuperview()
             
             if let v = hostedView {
                 contentView.addSubview(v)
-                // We use flex layout inside the cell too
-                v.flex.markDirty()
-                setNeedsLayout()
+                v.translatesAutoresizingMaskIntoConstraints = false
+                NSLayoutConstraint.activate([
+                    v.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                    v.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+                    v.topAnchor.constraint(equalTo: contentView.topAnchor),
+                    v.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+                ])
             }
         }
     }
     
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        guard let hostedView = hostedView else { return }
-        
-        // Layout logic:
-        // We want the hosted view to fill the cell's CONTENT VIEW
-//        hostedView.pin.all()
-        hostedView.flex.layout() 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        hostedView?.removeFromSuperview()
+        hostedView = nil
     }
-    
-    override func sizeThatFits(_ size: CGSize) -> CGSize {
-        guard let hostedView = hostedView else { return .zero }
-        // Calculate size based on width
-        hostedView.flex.width(size.width).layout(mode: .adjustHeight)
-        return hostedView.frame.size
-    }
-    
-    // UICollectionViewCell preferredAttributes uses systemLayoutSizeFitting by default
 }
 
-    
-public class NativeListView: FlexWidget, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+public class NativeListView: FlexWidget, UITableViewDataSource, UITableViewDelegate {
     var itemCount: Int = 0
-    // Async builder: Requests index, returns nothing immediately.
-    var builder: ((Int) -> Void)?
     var cachedItems: [Int: UIView] = [:]
-    let collectionView: UICollectionView
+    let tableView: UITableView
+    var itemHeight: CGFloat = 80
     
     init() {
-        let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .vertical
-        layout.minimumLineSpacing = 10
-        // Debugging: Start with fixed size to rule out auto-sizing issues
-        layout.itemSize = CGSize(width: UIScreen.main.bounds.width - 20, height: 60)
-        // layout.estimatedItemSize = UICollectionViewFlowLayout.automaticSize 
+        tableView = UITableView(frame: .zero, style: .plain)
+        tableView.backgroundColor = .clear
+        tableView.separatorStyle = .none
         
-        // Initialize Collection View
-        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        collectionView.backgroundColor = .clear // .blue for debugging?
+        super.init(view: tableView)
         
-        super.init(view: collectionView)
-        
-        collectionView.dataSource = self
-        collectionView.delegate = self
-        collectionView.register(FlexCollectionCell.self, forCellWithReuseIdentifier: FlexCollectionCell.id)
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.register(FlexTableViewCell.self, forCellReuseIdentifier: FlexTableViewCell.id)
+    }
+    
+    public func setItemHeight(_ height: CGFloat) {
+        itemHeight = height
+        tableView.reloadData()
     }
     
     public func setBuilder(count: Int, callback: @escaping (Int) -> Void) {
-        print("DEBUG: NativeListView setBuilder count: \(count)")
         self.itemCount = count
-        self.builder = callback
-        self.cachedItems.removeAll() // Clear cache on new builder
-        collectionView.reloadData()
+        tableView.reloadData()
+    }
+    
+    public func setCount(_ count: Int) {
+        self.itemCount = count
+        tableView.reloadData()
     }
     
     public func updateItem(index: Int, view: UIView) {
-        // print("DEBUG: NativeListView updateItem at \(index)")
         cachedItems[index] = view
-        
-        // Find if this cell is visible and update it immediately
-        // (Avoiding full reloadData for performance)
-        for cell in collectionView.visibleCells {
-            if let indexPath = collectionView.indexPath(for: cell), indexPath.item == index {
-                (cell as? FlexCollectionCell)?.hostedView = view
-            }
-        }
     }
     
-    // MARK: - DataSource
-    public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    // MARK: - UITableViewDataSource
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemCount
     }
     
-    public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: FlexCollectionCell.id, for: indexPath) as! FlexCollectionCell
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: FlexTableViewCell.id, for: indexPath) as! FlexTableViewCell
         
-        if let view = cachedItems[indexPath.item] {
+        if let view = cachedItems[indexPath.row] {
             cell.hostedView = view
-        } else {
-            // Cache miss
-            cell.hostedView = nil // Or a placeholder/loading view
-            
-            if let builder = builder {
-                // print("DEBUG: request builder for \(indexPath.item)")
-                builder(indexPath.item)
-            }
         }
         
         return cell
     }
     
-    // ensure cleanup?
-    
-    // MARK: - FlowLayout Delegate (Optional customization)
-    /*
-    public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        // If we didn't use automaticSize, we would calculate it here:
-        let item = items[indexPath.item]
-        // Calculate height for full width
-        let width = collectionView.bounds.width
-        item.flex.width(width).layout(mode: .adjustHeight)
-        return item.frame.size
-    }
-    */
-    
-    // Ensure the list itself lays out correctly
-    public override func layout() {
-        // print("DEBUG: NativeListView layout frame: \(view.frame)")
-        super.layout()
-        collectionView.collectionViewLayout.invalidateLayout()
+    // MARK: - UITableViewDelegate
+    public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return itemHeight
     }
 }
 
@@ -553,8 +1328,15 @@ public func list_view_set_builder(
     let listView = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! NativeListView
     
     listView.setBuilder(count: count) { index in
-        // Call C callback to request item (Async)
         callback(listPtr, index)
+    }
+}
+
+@_cdecl("list_view_set_count")
+public func list_view_set_count(_ listPtr: UnsafeMutableRawPointer, _ count: Int) {
+    MainActor.assumeIsolated {
+        let listView = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! NativeListView
+        listView.setCount(count)
     }
 }
 
@@ -570,10 +1352,167 @@ public func list_view_update_item(
     listView.updateItem(index: index, view: child.view)
 }
 
+// MARK: - FlashList (Simple ScrollView wrapper - Dart handles windowing/recycling)
+
+public class FlashListWidget: FlexWidget {
+    var itemCount: Int = 0
+    var itemHeight: CGFloat = 80
+    
+    let scrollView: UIScrollView
+    let contentStack: UIStackView
+    
+    @MainActor public init() {
+        scrollView = UIScrollView()
+        scrollView.showsVerticalScrollIndicator = true
+        scrollView.alwaysBounceVertical = true
+        scrollView.contentInsetAdjustmentBehavior = .always
+        
+        contentStack = UIStackView()
+        contentStack.axis = .vertical
+        contentStack.spacing = 0
+        contentStack.distribution = .fill
+        contentStack.alignment = .fill
+        
+        scrollView.addSubview(contentStack)
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+        ])
+        
+        super.init(view: scrollView)
+    }
+    
+    @MainActor public func setItemCount(_ count: Int) {
+        self.itemCount = count
+    }
+    
+    @MainActor public func setItemHeight(_ height: CGFloat) {
+        self.itemHeight = height
+    }
+    
+    @MainActor public func setContentHeight(_ height: CGFloat) {
+        let width = scrollView.frameLayoutGuide.layoutFrame.width
+        scrollView.contentSize = CGSize(width: width > 0 ? width : UIScreen.main.bounds.width, height: height)
+    }
+    
+    @MainActor public func updateItem(at index: Int, view: UIView) {
+        // Remove existing view at index if any
+        if index < contentStack.arrangedSubviews.count {
+            let existingView = contentStack.arrangedSubviews[index]
+            existingView.removeFromSuperview()
+        }
+        
+        // Add new view with fixed height
+        view.translatesAutoresizingMaskIntoConstraints = false
+        contentStack.insertArrangedSubview(view, at: index)
+        
+        NSLayoutConstraint.activate([
+            view.heightAnchor.constraint(equalToConstant: itemHeight),
+            view.widthAnchor.constraint(equalTo: contentStack.widthAnchor)
+        ])
+    }
+    
+    @MainActor public func removeItem(at index: Int) {
+        if index < contentStack.arrangedSubviews.count {
+            let view = contentStack.arrangedSubviews[index]
+            view.removeFromSuperview()
+        }
+    }
+    
+    @MainActor public func clear() {
+        contentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+    }
+    
+    @MainActor public func getScrollOffset() -> CGFloat {
+        return scrollView.contentOffset.y
+    }
+    
+    @MainActor public func setScrollOffset(_ offset: CGFloat) {
+        scrollView.contentOffset = CGPoint(x: 0, y: offset)
+    }
+}
+
+@_cdecl("create_flash_list")
+public func create_flash_list() -> UnsafeMutableRawPointer {
+    return MainActor.assumeIsolated {
+        let widget = FlashListWidget()
+        return Unmanaged.passRetained(widget).toOpaque()
+    }
+}
+
+@_cdecl("flash_list_set_item_count")
+public func flash_list_set_item_count(_ listPtr: UnsafeMutableRawPointer, _ count: Int) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        list.setItemCount(count)
+    }
+}
+
+@_cdecl("flash_list_set_item_height")
+public func flash_list_set_item_height(_ listPtr: UnsafeMutableRawPointer, _ height: Float) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        list.setItemHeight(CGFloat(height))
+    }
+}
+
+@_cdecl("flash_list_set_content_height")
+public func flash_list_set_content_height(_ listPtr: UnsafeMutableRawPointer, _ height: Float) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        list.setContentHeight(CGFloat(height))
+    }
+}
+
+@_cdecl("flash_list_update_item")
+public func flash_list_update_item(_ listPtr: UnsafeMutableRawPointer, _ index: Int, _ widgetPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        let widget = Unmanaged<FlexWidget>.fromOpaque(widgetPtr).takeUnretainedValue()
+        list.updateItem(at: index, view: widget.view)
+    }
+}
+
+@_cdecl("flash_list_remove_item")
+public func flash_list_remove_item(_ listPtr: UnsafeMutableRawPointer, _ index: Int) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        list.removeItem(at: index)
+    }
+}
+
+@_cdecl("flash_list_clear")
+public func flash_list_clear(_ listPtr: UnsafeMutableRawPointer) {
+    MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        list.clear()
+    }
+}
+
+@_cdecl("flash_list_get_scroll_offset")
+public func flash_list_get_scroll_offset(_ listPtr: UnsafeMutableRawPointer) -> Float {
+    return MainActor.assumeIsolated {
+        let list = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! FlashListWidget
+        return Float(list.getScrollOffset())
+    }
+}
+
 @_cdecl("create_list_view")
 public func create_list_view() -> UnsafeMutableRawPointer {
     let widget = NativeListView()
     return Unmanaged.passRetained(widget).toOpaque()
+}
+
+@_cdecl("list_view_set_item_height")
+public func list_view_set_item_height(_ listPtr: UnsafeMutableRawPointer, _ height: Float) {
+    MainActor.assumeIsolated {
+        let listView = Unmanaged<FlexWidget>.fromOpaque(listPtr).takeUnretainedValue() as! NativeListView
+        listView.setItemHeight(CGFloat(height))
+    }
 }
 
 // --- Layout Helper ---
