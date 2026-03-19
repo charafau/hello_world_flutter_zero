@@ -1376,6 +1376,13 @@ public class FlashListWidget: FlexWidget {
         scrollView.addSubview(contentStack)
         contentStack.translatesAutoresizingMaskIntoConstraints = false
         
+        NSLayoutConstraint.activate([
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+        ])
+        
         super.init(view: scrollView)
     }
     
@@ -1388,13 +1395,8 @@ public class FlashListWidget: FlexWidget {
     }
     
     @MainActor public func setContentHeight(_ height: CGFloat) {
-        NSLayoutConstraint.activate([
-            contentStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
-            contentStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
-            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
-        ])
-        scrollView.contentSize = CGSize(width: scrollView.bounds.width, height: height)
+        let width = scrollView.frameLayoutGuide.layoutFrame.width
+        scrollView.contentSize = CGSize(width: width > 0 ? width : UIScreen.main.bounds.width, height: height)
     }
     
     @MainActor public func updateItem(at index: Int, view: UIView) {
