@@ -10,11 +10,21 @@ This project builds on that concept and shows the simplest possible Flutter Zero
 
 ---
 
-## 📸 Screenshots
+## 📸 Screenshots & Demo
 
 > Output of the Hello World app running on Flutter Zero.
 
-![Hello World Screenshot](https://github.com/charafau/hello_world_flutter_zero/blob/main/screens/hello_world_flutter_zero.png?raw=true)
+### Screenshots
+
+| | |
+|:---:|:---:|
+| ![Screenshot 1](screens/screen01.png) | ![Screenshot 2](screens/screen02.png) |
+| ![Screenshot 3](screens/screen03.png) | ![Screenshot 4](screens/screen04.png) |
+
+### Demo Video
+
+<video src="screens/demo.webm" width="320" height="640" controls></video>
+
 
 
 ---
