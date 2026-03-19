@@ -25,6 +25,7 @@ This project builds on that concept and shows the simplest possible Flutter Zero
 
 <video src="screens/demo.webm" width="320" height="640" controls></video>
 
+Video doesn't work on github. You can find it here: https://github.com/charafau/hello_world_flutter_zero/blob/main/screens/demo.webm/
 
 
 ---
